@@ -11,7 +11,7 @@
         UserSolid,
         ClockSolid,
         EnvelopeSolid,
-        FileDocSolid,
+        EyeSolid,
     } from "flowbite-svelte-icons"; // Replace with your desired icons
     let spanClass = "flex-1 ms-3 whitespace-nowrap";
     $: activeUrl = $page.url.pathname;
@@ -20,9 +20,9 @@
 <Sidebar {activeUrl}>
     <SidebarWrapper>
         <SidebarGroup>
-            <SidebarItem href="/" label="Dashboard" active={activeUrl === "/"}>
+            <SidebarItem href="/" label="WRANDTEL" active={activeUrl === "/"}>
                 <svelte:fragment slot="icon">
-                    <ChartPieSolid
+                    <EyeSolid
                         class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
                     />
                 </svelte:fragment>

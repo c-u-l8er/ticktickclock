@@ -44,6 +44,7 @@
                 >Browser Plugins</DropdownItem
             >
             <DropdownItem href="/apps/desktop">Desktop</DropdownItem>
+            <DropdownItem href="/apps/desktop">Watch</DropdownItem>
             <!-- <DropdownDivider />
             <DropdownItem href="/">Sign out</DropdownItem> -->
         </Dropdown>

@@ -30,4 +30,17 @@
         Did we also mention that TickTickClock lets you generate an unlimited
         number of Invoices?
     </p>
+
+    <p class="copyright">
+        Made by <a href="https://wrand.cc">WRANDTEL</a><br />
+        &copy; {new Date().getFullYear()} TickTickClock. All rights reserved.
+    </p>
 </div>
+
+<style>
+    .copyright {
+        font-size: 0.8em;
+        color: gray;
+        margin-top: 20px;
+    }
+</style>

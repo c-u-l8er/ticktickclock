@@ -7,9 +7,17 @@ export interface Client {
   contactDetails: string;
 }
 
+export interface Project {
+  id?: number;
+  name: string;
+  description?: string;
+  clientId: number; // Add clientId to Project
+}
+
 export interface TimeEntry {
   id?: number;
   clientId: number;
+  projectId?: number; // Add projectId (optional, could be null)
   startTime: Date;
   endTime: Date;
   description: string;
@@ -35,14 +43,17 @@ export interface LineItem {
 
 export class TickTickClockDB extends Dexie {
   clients!: Table<Client, number>;
+  projects!: Table<Project, number>; // Add projects table
   timeEntries!: Table<TimeEntry, number>;
   invoices!: Table<Invoice, number>;
 
   constructor() {
     super("TickTickClockDB");
-    this.version(2).stores({
+    this.version(3).stores({
+      // Increment the version number!
       clients: "++id, name, rate, contactDetails",
-      timeEntries: "++id, clientId, startTime, endTime, description",
+      projects: "++id, name, description, clientId", // Define projects table
+      timeEntries: "++id, clientId, projectId, startTime, endTime, description", // Include projectId in index
       invoices: "++id, clientId, invoiceNumber, date, totalAmount, lineItems",
     });
   }

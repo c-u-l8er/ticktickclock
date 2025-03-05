@@ -12,6 +12,7 @@
         TableHead,
         TableHeadCell,
     } from "flowbite-svelte";
+    import { goto } from "$app/navigation";
 
     let clients: Client[] = [];
     let newClient: Omit<Client, "id"> = {
@@ -60,6 +61,10 @@
             editingClientId = null;
             await fetchClients();
         }
+    }
+
+    function goToClientProjects(clientId: number) {
+        goto(`/clients/${clientId}/`);
     }
 </script>
 
@@ -147,6 +152,11 @@
                                     color="red"
                                     on:click={() => deleteClient(client.id)}
                                     >Delete</Button
+                                >
+                                <Button
+                                    on:click={() =>
+                                        goToClientProjects(client.id)}
+                                    >Projects</Button
                                 >
                             </TableBodyCell>
                         {/if}

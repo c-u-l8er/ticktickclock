@@ -11,6 +11,7 @@
         UserSolid,
         ClockSolid,
         EnvelopeSolid,
+        FileDocSolid,
     } from "flowbite-svelte-icons"; // Replace with your desired icons
     let spanClass = "flex-1 ms-3 whitespace-nowrap";
     $: activeUrl = $page.url.pathname;

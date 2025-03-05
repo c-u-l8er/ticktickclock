@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { db, type Client, type TimeEntry } from "./db";
+    import { db, type Client, type TimeEntry, type Project } from "./db";
     import { onMount } from "svelte";
     import {
         Button,
@@ -12,7 +12,11 @@
     } from "flowbite-svelte";
 
     let clients: Client[] = [];
+    let projects: Project[] = []; // Add projects
+
     let selectedClient: number | null = null;
+    let selectedProject: number | null = null; // Add selectedProject
+
     let startTime: string | null = null;
     let endTime: string | null = null;
     let description: string = "";
@@ -21,8 +25,20 @@
 
     onMount(async () => {
         clients = await db.clients.toArray();
-        await fetchTimeEntries();
     });
+
+    $: if (selectedClient) {
+        // Reactively update projects
+        fetchProjects(selectedClient);
+    }
+
+    async function fetchProjects(clientId: number) {
+        projects = await db.projects
+            .where("clientId")
+            .equals(clientId)
+            .toArray();
+        selectedProject = null; // Reset project selection when client changes
+    }
 
     async function fetchTimeEntries() {
         timeEntries = await db.timeEntries.toArray();
@@ -43,6 +59,7 @@
         if (selectedClient && startTime && endTime) {
             const newEntry: Omit<TimeEntry, "id"> = {
                 clientId: selectedClient,
+                projectId: selectedProject || undefined, // Use selectedProject, or undefined if null
                 startTime: new Date(startTime),
                 endTime: new Date(endTime),
                 description: description,
@@ -52,6 +69,7 @@
             endTime = null;
             description = "";
             selectedClient = null;
+            selectedProject = null;
             await fetchTimeEntries();
         }
     }
@@ -65,6 +83,7 @@
         if (selectedClient && startTime && endTime) {
             const newEntry: Omit<TimeEntry, "id"> = {
                 clientId: selectedClient,
+                projectId: selectedProject || undefined, // Use selectedProject, or undefined if null
                 startTime: new Date(startTime),
                 endTime: new Date(endTime),
                 description: description,
@@ -75,6 +94,7 @@
             endTime = null;
             description = "";
             selectedClient = null;
+            selectedProject = null;
             await fetchTimeEntries();
         }
     }
@@ -97,6 +117,19 @@
                 {/each}
             </Select>
         </div>
+
+        <!-- Project Selection -->
+        {#if selectedClient}
+            <div class="mb-4">
+                <Label class="block mb-2">Project:</Label>
+                <Select bind:value={selectedProject} class="w-full">
+                    <option value={null}>Select a project (optional)</option>
+                    {#each projects as project (project.id)}
+                        <option value={project.id}>{project.name}</option>
+                    {/each}
+                </Select>
+            </div>
+        {/if}
 
         <div class="mb-4">
             <Label class="block mb-2">Description:</Label>
@@ -140,9 +173,16 @@
             <Listgroup>
                 {#each timeEntries as entry (entry.id)}
                     <ListgroupItem>
-                        {clients.find((c) => c.id === entry.clientId)?.name}: {formatDate(
-                            entry.startTime,
-                        )} - {formatDate(entry.endTime)} - {entry.description}
+                        {clients.find((c) => c.id === entry.clientId)?.name}:
+                        {#if entry.projectId}
+                            {projects.find((p) => p.id === entry.projectId)
+                                ?.name}:
+                        {:else}
+                            No Project:
+                        {/if}
+                        {formatDate(entry.startTime)} - {formatDate(
+                            entry.endTime,
+                        )} - {entry.description}
                     </ListgroupItem>
                 {/each}
             </Listgroup>

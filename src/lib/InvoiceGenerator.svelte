@@ -5,6 +5,7 @@
         type TimeEntry,
         type Invoice,
         type LineItem,
+        type Project,
     } from "./db";
     import { onMount } from "svelte";
     import {
@@ -22,7 +23,9 @@
     import * as XLSX from "xlsx";
 
     let clients: Client[] = [];
+    let projects: Project[] = [];
     let selectedClient: number | null = null;
+    let selectedProject: number | null = null;
     let timeEntries: TimeEntry[] = [];
     let invoiceNumber: string = "";
     let invoiceDate: string = new Date().toISOString().slice(0, 10); // Today's date in YYYY-MM-DD format
@@ -31,6 +34,7 @@
 
     onMount(async () => {
         clients = await db.clients.toArray();
+        projects = await db.projects.toArray();
     });
 
     async function generateInvoice() {
@@ -39,10 +43,17 @@
             return;
         }
 
-        timeEntries = await db.timeEntries
+        let timeEntriesQuery = db.timeEntries
             .where("clientId")
-            .equals(selectedClient)
-            .toArray();
+            .equals(selectedClient);
+
+        if (selectedProject) {
+            timeEntriesQuery = timeEntriesQuery.and(
+                (entry) => entry.projectId === selectedProject,
+            );
+        }
+
+        timeEntries = await timeEntriesQuery.toArray();
 
         let totalAmount: number = 0;
         lineItems = [];
@@ -98,8 +109,6 @@
         XLSX.utils.book_append_sheet(wb, ws, "Invoice");
         XLSX.writeFile(wb, `invoice_${invoiceNumber}.xlsx`);
     }
-
-    // Removed downloadInvoiceAsHtml function
 </script>
 
 <div class="p-4">
@@ -111,6 +120,16 @@
             <option value={null}>Select a client</option>
             {#each clients as client (client.id)}
                 <option value={client.id}>{client.name}</option>
+            {/each}
+        </Select>
+    </div>
+
+    <div class="mb-4">
+        <Label class="block mb-2">Project (Optional):</Label>
+        <Select bind:value={selectedProject} class="w-full">
+            <option value={null}>All Projects</option>
+            {#each projects as project (project.id)}
+                <option value={project.id}>{project.name}</option>
             {/each}
         </Select>
     </div>

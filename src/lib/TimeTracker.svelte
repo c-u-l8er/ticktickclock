@@ -88,16 +88,20 @@
     <h2 class="text-xl font-bold mb-4">Time Tracking</h2>
 
     <div class="mb-4">
-        <Label class="block mb-2">Client:</Label>
-        <Select bind:value={selectedClient} class="w-full">
-            <option value={null}>Select a client</option>
-            {#each clients as client (client.id)}
-                <option value={client.id}>{client.name}</option>
-            {/each}
-        </Select>
+        <div class="mb-4">
+            <Label class="block mb-2">Client:</Label>
+            <Select bind:value={selectedClient} class="w-full">
+                <option value={null}>Select a client</option>
+                {#each clients as client (client.id)}
+                    <option value={client.id}>{client.name}</option>
+                {/each}
+            </Select>
+        </div>
 
-        <Label class="block mb-2">Description:</Label>
-        <Textarea bind:value={description} class="w-full" rows="3" />
+        <div class="mb-4">
+            <Label class="block mb-2">Description:</Label>
+            <Textarea bind:value={description} class="w-full" rows="3" />
+        </div>
 
         {#if !isTracking}
             <Button on:click={startTracking} disabled={!selectedClient}
@@ -109,13 +113,20 @@
     </div>
 
     <div class="mb-4">
-        <h3 class="text-lg font-semibold mb-2">Manual Entry</h3>
-        <Label class="block mb-2">Start Time:</Label>
-        <Input type="datetime-local" bind:value={startTime} class="w-full" />
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold mb-2">Manual Entry</h3>
+            <Label class="block mb-2">Start Time:</Label>
+            <Input
+                type="datetime-local"
+                bind:value={startTime}
+                class="w-full"
+            />
+        </div>
 
-        <Label class="block mb-2">End Time:</Label>
-        <Input type="datetime-local" bind:value={endTime} class="w-full" />
-
+        <div class="mb-4">
+            <Label class="block mb-2">End Time:</Label>
+            <Input type="datetime-local" bind:value={endTime} class="w-full" />
+        </div>
         <Button
             on:click={addManualEntry}
             disabled={!selectedClient || !startTime || !endTime}

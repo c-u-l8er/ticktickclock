@@ -68,21 +68,30 @@
 
     <!-- Add Client Form -->
     <div class="mb-4">
-        <Label class="block mb-2">Name:</Label>
-        <Input type="text" bind:value={newClient.name} class="w-full" />
+        <div class="mb-4">
+            <Label class="block mb-2">Name:</Label>
+            <Input type="text" bind:value={newClient.name} class="w-full" />
+        </div>
 
-        <Label class="block mb-2">Rate:</Label>
-        <Input type="number" bind:value={newClient.rate} class="w-full" />
+        <div class="mb-4">
+            <Label class="block mb-2">Rate:</Label>
+            <Input type="number" bind:value={newClient.rate} class="w-full" />
+        </div>
 
-        <Label class="block mb-2">Contact Details:</Label>
-        <Input
-            type="text"
-            bind:value={newClient.contactDetails}
-            class="w-full"
-        />
+        <div class="mb-4">
+            <Label class="block mb-2">Contact Details:</Label>
+            <Input
+                type="text"
+                bind:value={newClient.contactDetails}
+                class="w-full"
+            />
+        </div>
 
         <Button on:click={addClient} class="mt-2">Add Client</Button>
     </div>
+
+    <br />
+    <br />
 
     <!-- Client List -->
     {#if clients.length > 0}

@@ -113,20 +113,23 @@
                 <option value={client.id}>{client.name}</option>
             {/each}
         </Select>
-
-        <Label class="block mb-2">Invoice Number:</Label>
-        <Input type="text" bind:value={invoiceNumber} class="w-full" />
-
-        <Label class="block mb-2">Invoice Date:</Label>
-        <Input type="date" bind:value={invoiceDate} class="w-full" />
-
-        <Button
-            on:click={generateInvoice}
-            disabled={!selectedClient || !invoiceNumber}
-            >Generate Invoice</Button
-        >
     </div>
 
+    <div class="mb-4">
+        <Label class="block mb-2">Invoice Number:</Label>
+        <Input type="text" bind:value={invoiceNumber} class="w-full" />
+    </div>
+    <div class="mb-4">
+        <Label class="block mb-2">Invoice Date:</Label>
+        <Input type="date" bind:value={invoiceDate} class="w-full" />
+    </div>
+    <Button
+        on:click={generateInvoice}
+        disabled={!selectedClient || !invoiceNumber}>Generate Invoice</Button
+    >
+
+    <br />
+    <br />
     {#if invoice}
         <div class="mb-4">
             <h3 class="text-lg font-semibold mb-2">Invoice Preview</h3>

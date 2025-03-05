@@ -25,6 +25,7 @@
 
     onMount(async () => {
         clients = await db.clients.toArray();
+        await fetchTimeEntries(); // Load Time Entries when the view has mounted
     });
 
     $: if (selectedClient) {
@@ -33,11 +34,15 @@
     }
 
     async function fetchProjects(clientId: number) {
-        projects = await db.projects
-            .where("clientId")
-            .equals(clientId)
-            .toArray();
-        selectedProject = null; // Reset project selection when client changes
+        try {
+            projects = await db.projects
+                .where("clientId")
+                .equals(clientId)
+                .toArray();
+            selectedProject = null;
+        } catch (error) {
+            console.error("Error fetching projects:", error);
+        }
     }
 
     async function fetchTimeEntries() {

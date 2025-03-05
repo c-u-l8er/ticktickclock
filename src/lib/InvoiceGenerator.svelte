@@ -32,9 +32,20 @@
     let invoice: Invoice | null = null;
     let lineItems: LineItem[] = [];
 
+    $: if (selectedClient) {
+        fetchProjects(selectedClient);
+    }
+
+    async function fetchProjects(clientId: number) {
+        projects = await db.projects
+            .where("clientId")
+            .equals(clientId)
+            .toArray();
+        selectedProject = null;
+    }
+
     onMount(async () => {
         clients = await db.clients.toArray();
-        projects = await db.projects.toArray();
     });
 
     async function generateInvoice() {

@@ -10,6 +10,9 @@
         Listgroup,
         ListgroupItem,
     } from "flowbite-svelte";
+    import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
+    import { get } from "svelte/store";
+    import { tick } from "svelte"; // Import tick
 
     let clients: Client[] = [];
     let projects: Project[] = []; // Add projects
@@ -23,30 +26,78 @@
     let isTracking: boolean = false;
     let timeEntries: TimeEntry[] = [];
 
-    onMount(async () => {
-        clients = await db.clients.toArray();
-        await fetchTimeEntries(); // Load Time Entries when the view has mounted
-    });
-
-    $: if (selectedClient) {
-        // Reactively update projects
-        fetchProjects(selectedClient);
+    // Reactively update projects and time entries when selectedWorkspaceId changes
+    $: {
+        console.log(
+            "selectedWorkspaceId or selectedClient changed:",
+            $selectedWorkspaceId,
+        );
+        tick().then(() => {
+            fetchProjects();
+        });
+        fetchTimeEntries();
+        fetchClients();
     }
 
-    async function fetchProjects(clientId: number) {
+    $: if (selectedClient) {
+        fetchProjects();
+    }
+
+    async function fetchProjects() {
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            projects = [];
+            return;
+        }
+
         try {
-            projects = await db.projects
-                .where("clientId")
-                .equals(clientId)
-                .toArray();
-            selectedProject = null;
+            // First get all projects for the workspace
+            let projectQuery = db.projects
+                .where("workspaceId")
+                .equals(workspaceId);
+
+            // If a client is selected, filter those projects
+            if (selectedClient) {
+                projects = await projectQuery
+                    .filter((project) => project.clientId === selectedClient)
+                    .toArray();
+            } else {
+                projects = await projectQuery.toArray();
+            }
+
+            selectedProject = null; // Reset selected project when the list changes
         } catch (error) {
             console.error("Error fetching projects:", error);
         }
+        console.log("Fetched projects:", projects);
     }
 
     async function fetchTimeEntries() {
-        timeEntries = await db.timeEntries.toArray();
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            timeEntries = [];
+            return;
+        }
+        timeEntries = await db.timeEntries
+            .where("workspaceId")
+            .equals(workspaceId)
+            .toArray();
+    }
+
+    async function fetchClients() {
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            clients = [];
+            return;
+        }
+        try {
+            clients = await db.clients
+                .where("workspaceId")
+                .equals(workspaceId)
+                .toArray();
+        } catch (error) {
+            console.error("Error fetching clients:", error);
+        }
     }
 
     async function startTracking() {
@@ -61,13 +112,17 @@
     async function stopTracking() {
         isTracking = false;
         endTime = new Date().toISOString();
-        if (selectedClient && startTime && endTime) {
+        const workspaceId = get(selectedWorkspaceId);
+
+        if (selectedClient && startTime && endTime && workspaceId) {
             const newEntry: Omit<TimeEntry, "id"> = {
+                workspaceId: workspaceId,
                 clientId: selectedClient,
                 projectId: selectedProject || undefined, // Use selectedProject, or undefined if null
                 startTime: new Date(startTime),
                 endTime: new Date(endTime),
                 description: description,
+                teamMemberId: 1, //TODO: CHANGE THIS LINE
             };
             await db.timeEntries.add(newEntry);
             startTime = null;
@@ -80,18 +135,21 @@
     }
 
     async function addManualEntry() {
-        if (!selectedClient || !startTime || !endTime) {
+        const workspaceId = get(selectedWorkspaceId);
+        if (!selectedClient || !startTime || !endTime || !workspaceId) {
             alert("Please fill in all fields.");
             return;
         }
 
         if (selectedClient && startTime && endTime) {
             const newEntry: Omit<TimeEntry, "id"> = {
+                workspaceId: workspaceId,
                 clientId: selectedClient,
                 projectId: selectedProject || undefined, // Use selectedProject, or undefined if null
                 startTime: new Date(startTime),
                 endTime: new Date(endTime),
                 description: description,
+                teamMemberId: 1, //TODO: CHANGE THIS LINE
             };
 
             await db.timeEntries.add(newEntry);
@@ -110,6 +168,12 @@
 </script>
 
 <div class="p-4">
+    <!-- <Button
+        on:click={async () => {
+            const allProjects = await db.projects.toArray();
+            console.log("All projects in database:", allProjects);
+        }}>Debug: Show All Projects</Button
+    > -->
     <h2 class="text-xl font-bold mb-4">Time Tracking</h2>
 
     <div class="mb-4">

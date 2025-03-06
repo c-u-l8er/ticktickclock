@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { Button } from "flowbite-svelte";
 
     onMount(() => {
         document.title = "TickTickClock - Free Invoice Generator";
@@ -30,6 +31,10 @@
         Did we also mention that TickTickClock lets you generate an unlimited
         number of Invoices?
     </p>
+
+    <a href="/workspaces" class="mt-2">
+        <Button class="mt-2">WORKSPACES</Button>
+    </a>
 
     <p class="copyright">
         Made by <a href="https://wrand.cc">WRANDTEL</a><br />

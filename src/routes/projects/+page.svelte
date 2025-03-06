@@ -12,30 +12,61 @@
         TableHead,
         TableHeadCell,
     } from "flowbite-svelte";
+    import { get } from "svelte/store";
+    import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
 
     let projects: Project[] = [];
     let newProject: Omit<Project, "id"> = {
+        workspaceId: 0, // This will be set before adding
         name: "",
         description: "",
+        clientId: 0,
     };
     let editingProjectId: number | null = null;
-    let editingProject: Omit<Project, "id"> = {
+    let editingProject: Omit<Project, "id" | "workspaceId"> = {
+        // Omit workspaceId here
         name: "",
         description: "",
+        clientId: 0,
     };
 
     onMount(async () => {
         await fetchProjects();
     });
 
-    async function fetchProjects() {
-        projects = await db.projects.toArray();
+    async function addProject() {
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            alert("Please select a workspace first.");
+            return;
+        }
+
+        const projectToAdd = {
+            ...newProject,
+            workspaceId: workspaceId,
+        };
+
+        await db.projects.add(projectToAdd);
+        newProject = {
+            workspaceId: workspaceId,
+            name: "",
+            description: "",
+            clientId: 0,
+        };
+        await fetchProjects();
     }
 
-    async function addProject() {
-        await db.projects.add(newProject);
-        newProject = { name: "", description: "" };
-        await fetchProjects();
+    // Update fetchProjects to filter by workspace
+    async function fetchProjects() {
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            projects = [];
+            return;
+        }
+        projects = await db.projects
+            .where("workspaceId")
+            .equals(workspaceId)
+            .toArray();
     }
 
     async function deleteProject(id: number) {
@@ -45,7 +76,11 @@
 
     async function startEdit(project: Project) {
         editingProjectId = project.id;
-        editingProject = { ...project };
+        editingProject = {
+            name: project.name,
+            description: project.description,
+            clientId: project.clientId,
+        };
     }
 
     async function cancelEdit() {
@@ -54,7 +89,15 @@
 
     async function saveEdit() {
         if (editingProjectId) {
-            await db.projects.update(editingProjectId, editingProject);
+            const workspaceId = get(selectedWorkspaceId);
+            if (!workspaceId) {
+                alert("Please select a workspace first.");
+                return;
+            }
+            await db.projects.update(editingProjectId, {
+                ...editingProject,
+                workspaceId: workspaceId,
+            });
             editingProjectId = null;
             await fetchProjects();
         }
@@ -80,6 +123,15 @@
             />
         </div>
 
+        <div class="mb-4">
+            <Label class="block mb-2">Client ID:</Label>
+            <Input
+                type="number"
+                bind:value={newProject.clientId}
+                class="w-full"
+            />
+        </div>
+
         <Button on:click={addProject} class="mt-2">Add Project</Button>
     </div>
 
@@ -92,6 +144,7 @@
             <TableHead>
                 <TableHeadCell>Name</TableHeadCell>
                 <TableHeadCell>Description</TableHeadCell>
+                <TableHeadCell>Client ID</TableHeadCell>
                 <TableHeadCell>Actions</TableHeadCell>
             </TableHead>
             <TableBody>
@@ -110,6 +163,13 @@
                                     bind:value={editingProject.description}
                                 /></TableBodyCell
                             >
+
+                            <TableBodyCell
+                                ><Input
+                                    type="number"
+                                    bind:value={editingProject.clientId}
+                                /></TableBodyCell
+                            >
                             <TableBodyCell>
                                 <Button color="green" on:click={saveEdit}
                                     >Save</Button
@@ -122,6 +182,7 @@
                         {:else}
                             <TableBodyCell>{project.name}</TableBodyCell>
                             <TableBodyCell>{project.description}</TableBodyCell>
+                            <TableBodyCell>{project.clientId}</TableBodyCell>
                             <TableBodyCell>
                                 <Button on:click={() => startEdit(project)}
                                     >Edit</Button

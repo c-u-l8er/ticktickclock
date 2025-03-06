@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { db, type Client } from "./db";
+    import { db, type Client } from "$lib/db";
     import { onMount } from "svelte";
     import {
         Button,
@@ -13,9 +13,11 @@
         TableHeadCell,
     } from "flowbite-svelte";
     import { goto } from "$app/navigation";
+    import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
+    import { get } from "svelte/store";
 
     let clients: Client[] = [];
-    let newClient: Omit<Client, "id"> = {
+    let newClient: Omit<Client, "id" | "workspaceId"> = {
         name: "",
         rate: 0,
         contactDetails: "",
@@ -27,16 +29,34 @@
         contactDetails: "",
     };
 
-    onMount(async () => {
-        await fetchClients();
-    });
+    // Reactive statement to fetch clients when selectedWorkspaceId changes
+    $: {
+        console.log("selectedWorkspaceId changed:", $selectedWorkspaceId); // Debugging
+        fetchClients();
+    }
 
     async function fetchClients() {
-        clients = await db.clients.toArray();
+        const currentWorkspaceId = get(selectedWorkspaceId);
+        console.log("Fetching clients for workspace ID:", currentWorkspaceId); // Debugging
+        if (currentWorkspaceId) {
+            clients = await db.clients
+                .where("workspaceId")
+                .equals(currentWorkspaceId)
+                .toArray();
+            console.log("Fetched clients:", clients); // Debugging
+        } else {
+            clients = [];
+            console.log("No workspace selected, clients set to empty array."); // Debugging
+        }
     }
 
     async function addClient() {
-        await db.clients.add(newClient);
+        const currentWorkspaceId = get(selectedWorkspaceId);
+        if (!currentWorkspaceId) {
+            alert("Please select a workspace first.");
+            return;
+        }
+        await db.clients.add({ ...newClient, workspaceId: currentWorkspaceId });
         newClient = { name: "", rate: 0, contactDetails: "" };
         await fetchClients();
     }

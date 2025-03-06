@@ -21,6 +21,8 @@
         Input,
     } from "flowbite-svelte";
     import * as XLSX from "xlsx";
+    import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
+    import { get } from "svelte/store";
 
     let clients: Client[] = [];
     let projects: Project[] = [];
@@ -28,35 +30,64 @@
     let selectedProject: number | null = null;
     let timeEntries: TimeEntry[] = [];
     let invoiceNumber: string = "";
-    let invoiceDate: string = new Date().toISOString().slice(0, 10); // Today's date in YYYY-MM-DD format
+    let invoiceDate: string = new Date().toISOString().slice(0, 10);
     let invoice: Invoice | null = null;
     let lineItems: LineItem[] = [];
+
+    // Reactive statement to fetch clients when workspace changes
+    $: {
+        if ($selectedWorkspaceId) {
+            fetchClients();
+        } else {
+            clients = [];
+            projects = [];
+            selectedClient = null;
+            selectedProject = null;
+        }
+    }
 
     $: if (selectedClient) {
         fetchProjects(selectedClient);
     }
 
+    async function fetchClients() {
+        const workspaceId = get(selectedWorkspaceId);
+        if (workspaceId) {
+            clients = await db.clients
+                .where("workspaceId")
+                .equals(workspaceId)
+                .toArray();
+        }
+    }
+
     async function fetchProjects(clientId: number) {
-        projects = await db.projects
-            .where("clientId")
-            .equals(clientId)
-            .toArray();
+        const workspaceId = get(selectedWorkspaceId);
+        if (workspaceId) {
+            projects = await db.projects
+                .where("workspaceId")
+                .equals(workspaceId)
+                .and((project) => project.clientId === clientId)
+                .toArray();
+        }
         selectedProject = null;
     }
 
-    onMount(async () => {
-        clients = await db.clients.toArray();
-    });
-
     async function generateInvoice() {
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            alert("Please select a workspace first.");
+            return;
+        }
+
         if (!selectedClient) {
             alert("Please select a client.");
             return;
         }
 
         let timeEntriesQuery = db.timeEntries
-            .where("clientId")
-            .equals(selectedClient);
+            .where("workspaceId")
+            .equals(workspaceId)
+            .and((entry) => entry.clientId === selectedClient);
 
         if (selectedProject) {
             timeEntriesQuery = timeEntriesQuery.and(
@@ -75,7 +106,7 @@
                 const duration =
                     (new Date(entry.endTime).getTime() -
                         new Date(entry.startTime).getTime()) /
-                    (1000 * 60 * 60); // Duration in hours
+                    (1000 * 60 * 60);
                 const amount = duration * client.rate;
                 totalAmount += amount;
 
@@ -91,6 +122,7 @@
         }
 
         invoice = {
+            workspaceId: workspaceId, // Add workspaceId to invoice
             clientId: selectedClient,
             invoiceNumber: invoiceNumber,
             date: invoiceDate,
@@ -98,7 +130,10 @@
             lineItems: lineItems,
         };
 
-        // TODO: Save the invoice to the database if needed
+        // Save the invoice to the database
+        if (invoice) {
+            await db.invoices.add(invoice);
+        }
     }
 
     function downloadInvoice() {

@@ -13,13 +13,17 @@
         TableHeadCell,
     } from "flowbite-svelte";
     import { page } from "$app/stores";
+    import { get } from "svelte/store";
+    import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
 
     export let data;
 
     let projects: Project[] = [];
-    let newProject: Omit<Project, "id" | "clientId"> = {
+    let newProject: Omit<Project, "id"> = {
+        workspaceId: 0, // This will be set before adding
         name: "",
         description: "",
+        clientId: 0,
     };
     let editingProjectId: number | null = null;
     let editingProject: Omit<Project, "id" | "clientId"> = {
@@ -34,16 +38,56 @@
     });
 
     async function fetchProjects() {
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            projects = [];
+            return;
+        }
         projects = await db.projects
-            .where("clientId")
-            .equals(clientId)
+            .where("workspaceId")
+            .equals(workspaceId)
+            .and((item) => item.clientId === parseInt($page.params.clientId))
             .toArray();
     }
 
     async function addProject() {
-        await db.projects.add({ ...newProject, clientId: clientId });
-        newProject = { name: "", description: "" };
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            alert("Please select a workspace first.");
+            return;
+        }
+
+        const projectToAdd = {
+            ...newProject,
+            workspaceId: workspaceId,
+            clientId: parseInt($page.params.clientId),
+        };
+
+        await db.projects.add(projectToAdd);
+        newProject = {
+            workspaceId: workspaceId,
+            name: "",
+            description: "",
+            clientId: parseInt($page.params.clientId),
+        };
         await fetchProjects();
+    }
+
+    // Update saveEdit to include workspaceId
+    async function saveEdit() {
+        if (editingProjectId) {
+            const workspaceId = get(selectedWorkspaceId);
+            if (!workspaceId) {
+                alert("Please select a workspace first.");
+                return;
+            }
+            await db.projects.update(editingProjectId, {
+                ...editingProject,
+                workspaceId: workspaceId,
+            });
+            editingProjectId = null;
+            await fetchProjects();
+        }
     }
 
     async function deleteProject(id: number) {
@@ -61,17 +105,6 @@
 
     async function cancelEdit() {
         editingProjectId = null;
-    }
-
-    async function saveEdit() {
-        if (editingProjectId) {
-            await db.projects.update(editingProjectId, {
-                ...editingProject,
-                clientId: clientId,
-            });
-            editingProjectId = null;
-            await fetchProjects();
-        }
     }
 </script>
 

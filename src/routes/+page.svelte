@@ -33,7 +33,7 @@
     </p>
 
     <a href="/workspaces" class="mt-2">
-        <Button class="mt-2">WORKSPACES</Button>
+        <Button class="mt-2">Let's Go!</Button>
     </a>
 
     <p class="copyright">

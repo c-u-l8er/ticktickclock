@@ -11,7 +11,7 @@
         DropdownDivider,
     } from "flowbite-svelte";
     import { ChevronDownOutline } from "flowbite-svelte-icons";
-    import { ClockOutline } from "flowbite-svelte-icons";
+    import { FileImportSolid } from "flowbite-svelte-icons";
     import { db } from "$lib/db";
     import { onMount, onDestroy } from "svelte";
     import {
@@ -76,38 +76,40 @@
     }
 </script>
 
-<Navbar rounded={true}>
-    <NavBrand href="/">
-        <ClockOutline
-            class="w-6 h-6 mr-2 text-gray-800 dark:text-white inline"
-        />
-        <span
-            class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
-            >TickTickClock</span
-        >
-    </NavBrand>
-
-    <!-- Workspace Dropdown -->
-    {#if $workspaces.length > 0}
-        <div class="mr-4">
-            <select
-                style="min-width: 150px;"
-                bind:value={localSelectedWorkspaceId}
-                on:change={handleWorkspaceChange}
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
-				rounded-lg focus:ring-blue-500 focus:border-blue-500 block
-				w-full p-2.5 dark:bg-gray-700 dark:border-gray-600
-				dark:placeholder-gray-400 dark:text-white
-				dark:focus:ring-blue-500 dark:focus:border-blue-500"
+<Navbar rounded={true} navContainerClass="nav-contain">
+    <div style="display: flex; flex-direction: row;">
+        <NavBrand href="/">
+            <div class="file-pdf-outline-icon">
+                <FileImportSolid
+                    class="w-10 h-10 mr-2 text-gray-800 dark:text-white inline"
+                />
+            </div>
+            <span
+                class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
+                ><span style="font-weight: normal;">TickTick</span>Clock</span
             >
-                {#each $workspaces as workspace (workspace.id)}
-                    <option value={workspace.id}>{workspace.name}</option>
-                {/each}
-            </select>
-        </div>
-    {/if}
+        </NavBrand>
 
-    <NavHamburger />
+        <!-- Workspace Dropdown -->
+        {#if $workspaces.length > 0}
+            <div class="mr-4" style="margin-left: 1em;">
+                <select
+                    style="min-width: 175px;"
+                    bind:value={localSelectedWorkspaceId}
+                    on:change={handleWorkspaceChange}
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
+    				rounded-lg focus:ring-blue-500 focus:border-blue-500 block
+    				w-full p-2.5 dark:bg-gray-700 dark:border-gray-600
+    				dark:placeholder-gray-400 dark:text-white
+    				dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                >
+                    {#each $workspaces as workspace (workspace.id)}
+                        <option value={workspace.id}>{workspace.name}</option>
+                    {/each}
+                </select>
+            </div>
+        {/if}
+    </div>
 
     <NavUl {activeUrl}>
         <NavLi href="/">Home</NavLi>
@@ -130,3 +132,18 @@
         <NavLi href="/developer-api">Developer API</NavLi>
     </NavUl>
 </Navbar>
+
+<style>
+    :global(.nav-contain) {
+        width: 100%;
+        max-width: 100% !important;
+    }
+
+    .file-pdf-outline-icon {
+        /* You might need to adjust this selector based on the actual classes or structure of the icon */
+        font-size: 0 !important; /* Hide the text by making font-size zero */
+        /* or */
+        /* font-size: 0.1px !important;  Make it extremely tiny but not fully hidden (sometimes better for accessibility than display: none) */
+        fill: transparent !important; /* Make the text color transparent as well, just in case */
+    }
+</style>

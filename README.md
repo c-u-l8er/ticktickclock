@@ -2,7 +2,7 @@ ticktickclock
 ========
 
 ### main navigation
-- WRANDTEL
+ANALOG:
 - Timesheet
 - Time Tracker
 - Calendar
@@ -16,7 +16,9 @@ GENERATE:
 - Invoices
 
 MANAGE:
+- Workspaces
 - Clients
+- Projects
 - Team Members
 - Approvals
 
@@ -173,8 +175,8 @@ properties for each approval:
 - status // pending, approved, rejected, withdrawn
 
 for each approval there is one:
-- teamMemberRequester // teamMember that looks for approval
-- teamMemberGuard // teamMember that is doing the approval
+- teamMemberRequester // teamMember, that is not a team manager, who looks for approval
+- teamMemberGuard // teamMember, that is a team manager, who is doing the approval
 
 for each task there are many:
 - workSchedules // for approval

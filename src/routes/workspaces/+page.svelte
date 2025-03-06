@@ -67,14 +67,14 @@
         }
     }
 
-    // async function startEdit(workspace: Workspace) {
-    //     editingWorkspaceId = workspace.id;
-    //     editingWorkspace = { ...workspace };
-    // }
+    async function startEdit(workspace: Workspace) {
+        editingWorkspaceId = workspace.id;
+        editingWorkspace = { ...workspace };
+    }
 
-    // async function cancelEdit() {
-    //     editingWorkspaceId = null;
-    // }
+    async function cancelEdit() {
+        editingWorkspaceId = null;
+    }
 </script>
 
 <div class="p-4">

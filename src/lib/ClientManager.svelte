@@ -1,6 +1,6 @@
 <script lang="ts">
     import { db, type Client } from "$lib/db";
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte"; // Import onDestroy
     import {
         Button,
         Label,
@@ -13,51 +13,97 @@
         TableHeadCell,
     } from "flowbite-svelte";
     import { goto } from "$app/navigation";
-    import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
+    import {
+        selectedWorkspaceId,
+        workspaces,
+    } from "$lib/stores/workspaceStore";
     import { get } from "svelte/store";
 
     let clients: Client[] = [];
-    let newClient: Omit<Client, "id" | "workspaceId"> = {
+    let newClient: Omit<Client, "id"> = {
+        workspaceId: get(selectedWorkspaceId) || 0,
         name: "",
         rate: 0,
         contactDetails: "",
     };
     let editingClientId: number | null = null;
     let editingClient: Omit<Client, "id"> = {
+        workspaceId: 0,
         name: "",
         rate: 0,
         contactDetails: "",
     };
+    let currentWorkspaceRate: number | undefined;
 
-    // Reactive statement to fetch clients when selectedWorkspaceId changes
+    // Use a subscription to react to selectedWorkspaceId changes
+    let unsubscribe: () => void;
+
+    onMount(() => {
+        unsubscribe = selectedWorkspaceId.subscribe(() => {
+            fetchClientsAndUpdateForm(); // Call the combined function
+        });
+        fetchClientsAndUpdateForm(); // Initial fetch
+    });
+
+    onDestroy(() => {
+        if (unsubscribe) {
+            unsubscribe();
+        }
+    });
+
     $: {
-        console.log("selectedWorkspaceId changed:", $selectedWorkspaceId); // Debugging
-        fetchClients();
+        const workspaceId = get(selectedWorkspaceId);
+        const currentWorkspace = $workspaces.find((w) => w.id === workspaceId);
+        currentWorkspaceRate = currentWorkspace?.rate;
+
+        if (workspaceId) {
+            newClient.workspaceId = workspaceId;
+        }
+    }
+
+    // Combined function to fetch clients AND update the form
+    async function fetchClientsAndUpdateForm() {
+        await fetchClients(); // Fetch the clients (as before)
+
+        const workspaceId = get(selectedWorkspaceId);
+        if (workspaceId) {
+            const currentWorkspace = $workspaces.find(
+                (w) => w.id === workspaceId,
+            );
+            newClient.rate = currentWorkspace?.rate ?? 0; // Update newClient.rate here
+        } else {
+            newClient.rate = 0;
+        }
     }
 
     async function fetchClients() {
         const currentWorkspaceId = get(selectedWorkspaceId);
-        console.log("Fetching clients for workspace ID:", currentWorkspaceId); // Debugging
         if (currentWorkspaceId) {
             clients = await db.clients
                 .where("workspaceId")
                 .equals(currentWorkspaceId)
                 .toArray();
-            console.log("Fetched clients:", clients); // Debugging
         } else {
             clients = [];
-            console.log("No workspace selected, clients set to empty array."); // Debugging
         }
     }
 
+    // ... (rest of your ClientManager.svelte code remains the same) ...
     async function addClient() {
         const currentWorkspaceId = get(selectedWorkspaceId);
         if (!currentWorkspaceId) {
             alert("Please select a workspace first.");
             return;
         }
-        await db.clients.add({ ...newClient, workspaceId: currentWorkspaceId });
-        newClient = { name: "", rate: 0, contactDetails: "" };
+
+        // No need to manually set workspaceId here; it's already in newClient
+        await db.clients.add(newClient); // Use the newClient object directly
+        newClient = {
+            workspaceId: currentWorkspaceId,
+            name: "",
+            rate: currentWorkspaceRate ?? 0,
+            contactDetails: "",
+        }; // Reset, including rate
         await fetchClients();
     }
 
@@ -68,7 +114,7 @@
 
     async function startEdit(client: Client) {
         editingClientId = client.id;
-        editingClient = { ...client };
+        editingClient = { ...client }; // This now correctly copies all fields
     }
 
     async function cancelEdit() {
@@ -84,7 +130,7 @@
     }
 
     function goToClientProjects(clientId: number) {
-        goto(`/clients/${clientId}/`);
+        goto(`/clients/${clientId}/projects`);
     }
 </script>
 

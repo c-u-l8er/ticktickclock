@@ -20,7 +20,11 @@
 <Sidebar {activeUrl}>
     <SidebarWrapper>
         <SidebarGroup>
-            <SidebarItem href="/" label="WRANDTEL" active={activeUrl === "/"}>
+            <SidebarItem
+                href="/workspaces"
+                label="Workspaces"
+                active={activeUrl === "/workspaces"}
+            >
                 <svelte:fragment slot="icon">
                     <EyeSolid
                         class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"

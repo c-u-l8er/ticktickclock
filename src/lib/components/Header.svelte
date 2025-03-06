@@ -13,12 +13,12 @@
     import { ChevronDownOutline } from "flowbite-svelte-icons";
     import { ClockOutline } from "flowbite-svelte-icons";
     import { db } from "$lib/db";
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import {
         selectedWorkspaceId,
         workspaces,
     } from "$lib/stores/workspaceStore";
-    import { goto } from "$app/navigation"; // Import goto
+    import { goto } from "$app/navigation";
 
     let hidden = true;
     $: activeUrl = $page.url.pathname;
@@ -28,25 +28,51 @@
         await fetchWorkspaces();
     });
 
+    const unsubscribe = selectedWorkspaceId.subscribe((value) => {
+        if (value !== localSelectedWorkspaceId && value !== null) {
+            localSelectedWorkspaceId = value;
+        }
+    });
+
+    onDestroy(unsubscribe);
+
     async function fetchWorkspaces() {
         const workspacesList = await db.workspaces.toArray();
         workspaces.set(workspacesList);
-        if (workspacesList.length > 0 && !$selectedWorkspaceId) {
-            localSelectedWorkspaceId = workspacesList[0].id || null;
-            selectedWorkspaceId.set(localSelectedWorkspaceId);
+
+        // Load selectedWorkspaceId from localStorage
+        const storedWorkspaceId = localStorage.getItem("selectedWorkspaceId");
+
+        if (storedWorkspaceId) {
+            localSelectedWorkspaceId = Number(storedWorkspaceId);
+            // Check if the stored ID is in the list of workspaces
+            const workspaceExists = workspacesList.some(
+                (workspace) => workspace.id === localSelectedWorkspaceId,
+            );
+            if (workspaceExists) {
+                selectedWorkspaceId.set(localSelectedWorkspaceId);
+            } else {
+                // Handle cases where stored workspace doesn't exist
+                localSelectedWorkspaceId =
+                    workspacesList.length > 0 ? workspacesList[0].id : null;
+                handleWorkspaceChange();
+            }
+        } else if (workspacesList.length > 0) {
+            // If no stored ID, but workspaces exist, select the first one
+            localSelectedWorkspaceId = workspacesList[0].id;
+            handleWorkspaceChange(); // this saves it.
         }
     }
 
-    $: {
-        selectedWorkspaceId.set(localSelectedWorkspaceId);
-    }
-
-    // Function to handle workspace selection change
     function handleWorkspaceChange() {
-        selectedWorkspaceId.set(localSelectedWorkspaceId);
-        // Optionally, you might want to redirect the user to the home page or a suitable dashboard
-        // after changing the workspace.  Example:
-        // goto('/');
+        if (localSelectedWorkspaceId !== null) {
+            selectedWorkspaceId.set(localSelectedWorkspaceId); // Sync with the store
+            // Save to localStorage
+            localStorage.setItem(
+                "selectedWorkspaceId",
+                String(localSelectedWorkspaceId),
+            );
+        }
     }
 </script>
 
@@ -68,12 +94,12 @@
                 style="min-width: 150px;"
                 bind:value={localSelectedWorkspaceId}
                 on:change={handleWorkspaceChange}
-            >
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
-                rounded-lg focus:ring-blue-500 focus:border-blue-500 block
-                w-full p-2.5 dark:bg-gray-700 dark:border-gray-600
-                dark:placeholder-gray-400 dark:text-white
-                dark:focus:ring-blue-500 dark:focus:border-blue-500" >
+				rounded-lg focus:ring-blue-500 focus:border-blue-500 block
+				w-full p-2.5 dark:bg-gray-700 dark:border-gray-600
+				dark:placeholder-gray-400 dark:text-white
+				dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            >
                 {#each $workspaces as workspace (workspace.id)}
                     <option value={workspace.id}>{workspace.name}</option>
                 {/each}

@@ -26,11 +26,15 @@
         <p class="mb-4">Make beautiful Invoices with one click!</p>
 
         <p class="mb-4">
-            Welcome to the simple yet elegant Invoice Generator, trusted by
-            millions of people. TickTickClock lets you instantly generate
-            invoices with our attractive invoice template straight from your web
-            browser. The invoices you create can be easily sent and paid online,
-            or downloaded as a convenient XLSX file.
+            Welcome to the simple and sophisticated Invoice Generator, trusted
+            by those who care. TickTickClock lets you instantly generate
+            invoices, analyzations, and AI prompts with our attractive analog
+            controls straight from your web browser.
+            <br />
+            <br />
+            The invoices that you create can be easily sent and paid online, or downloaded
+            as a convenient XLSX file. The AI prompts that you create can be run
+            anywhere and the analyzations that you create will transform your business.
         </p>
 
         <p class="mb-4">

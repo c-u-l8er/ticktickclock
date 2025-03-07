@@ -15,10 +15,7 @@
     />
 </svelte:head>
 
-<div
-    class="flex items-center justify-center min-h-screen"
-    style="margin-top: -100px;"
->
+<div class="flex items-center justify-center min-h-screen">
     <div
         class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-2xl"
     >

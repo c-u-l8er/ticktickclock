@@ -16,8 +16,12 @@
         BuildingSolid,
         TrashBinSolid,
         PenSolid,
+        EyeSolid,
     } from "flowbite-svelte-icons";
     import { workspaces } from "$lib/stores/workspaceStore";
+    import { goto } from "$app/navigation";
+
+    import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
 
     let newWorkspace: Omit<Workspace, "id"> = { name: "", rate: 0 };
     let editingWorkspaceId: number | null = null;
@@ -41,6 +45,13 @@
             await db.workspaces.add(newWorkspace);
             newWorkspace = { name: "", rate: 0 }; // Clear the form
             await fetchWorkspaces(); // Refresh the workspace list
+
+            // After adding, select the newly created workspace by default
+            const allWorkspaces = await db.workspaces.toArray();
+            selectedWorkspaceId.set(
+                allWorkspaces[allWorkspaces.length - 1].id ?? null,
+            );
+
             console.log("Workspace added successfully");
         } catch (error) {
             console.error("Error adding workspace:", error);
@@ -74,6 +85,22 @@
 
     async function cancelEdit() {
         editingWorkspaceId = null;
+    }
+
+    function viewWorkspace(id: number) {
+        // Function to navigate
+        goto(`/workspaces/${id}`);
+    }
+
+    // New function to handle workspace selection and save to localStorage
+    function selectWorkspace(id: number | null) {
+        if (id !== null) {
+            selectedWorkspaceId.set(id);
+            localStorage.setItem("selectedWorkspaceId", String(id));
+            console.log(`Workspace selected: ${id}`);
+            // Optionally, reload the page to reflect the change immediately
+            // window.location.reload();  // consider if reload is necessary
+        }
     }
 </script>
 
@@ -163,6 +190,17 @@
                                     >
                                     <TableBodyCell>
                                         <div class="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                on:click={() => {
+                                                    selectWorkspace(
+                                                        workspace.id,
+                                                    );
+                                                    viewWorkspace(workspace.id);
+                                                }}
+                                            >
+                                                <EyeSolid class="w-4 h-4" />
+                                            </Button>
                                             <Button
                                                 size="sm"
                                                 color="primary"

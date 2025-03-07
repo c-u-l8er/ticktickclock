@@ -1,11 +1,11 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import {
+        Button,
         Navbar,
         NavBrand,
         NavLi,
         NavUl,
-        NavHamburger,
         Dropdown,
         DropdownItem,
         DropdownDivider,
@@ -74,6 +74,12 @@
             );
         }
     }
+
+    function goToSelectedWorkspace() {
+        if (localSelectedWorkspaceId) {
+            window.location.href = `/workspaces/${localSelectedWorkspaceId}`; // Hard refresh
+        }
+    }
 </script>
 
 <Navbar rounded={true} navContainerClass="nav-contain">
@@ -108,6 +114,8 @@
                     {/each}
                 </select>
             </div>
+            <!-- Go to Workspace Button -->
+            <Button size="sm" on:click={goToSelectedWorkspace}>!!</Button>
         {/if}
     </div>
 

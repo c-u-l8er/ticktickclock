@@ -33,11 +33,22 @@ export interface TeamMember {
   role: "admin" | "project manager" | "team manager";
 }
 
+export interface Task {
+  id?: number;
+  projectId: number; // Foreign key to the Project table
+  name: string;
+  description?: string;
+  rate?: number; // Hourly rate for the task, optional
+  teamMemberId?: number; //optional team member,
+  status: "open" | "in progress" | "completed" | "blocked"; //example status values
+}
+
 export interface TimeEntry {
   id?: number;
   workspaceId: number; // Add workspaceId to TimeEntry
   clientId: number;
   projectId?: number;
+  taskId?: number; // NEW: Foreign key to the Task table
   teamMemberId: number; // Add teamMemberId to TimeEntry
   startTime: Date;
   endTime: Date;
@@ -48,6 +59,7 @@ export interface Invoice {
   id?: number;
   workspaceId: number; // Add workspaceId to Invoice
   clientId: number;
+  projectId?: number; //Foreign key to project.
   invoiceNumber: string;
   date: string;
   totalAmount: number;
@@ -69,22 +81,67 @@ export class TickTickClockDB extends Dexie {
   projects!: Table<Project, number>;
   teamMembers!: Table<TeamMember, number>;
   timeEntries!: Table<TimeEntry, number>;
+  tasks!: Table<Task, number>;
   invoices!: Table<Invoice, number>;
+
+  private static instance: TickTickClockDB;
+  private initializationPromise: Promise<boolean> | null = null;
 
   constructor() {
     super("TickTickClockDB");
-    this.version(4).stores({
-      // Increment the version number!
+    this.version(5).stores({
+      //Increment version number!
       workspaces: "++id, name, rate, clerkOrganizationId",
       clients: "++id, workspaceId, name, rate, contactDetails",
-      projects: "++id, workspaceId, name, description, clientId",
+      projects: "++id, workspaceId, name, description, clientId, rate",
       teamMembers: "++id, workspaceId, name, billableRate, costRate, role",
+      tasks: "++id, projectId, name, description, rate, teamMemberId, status", // Define index for tasks
       timeEntries:
-        "++id, workspaceId, clientId, projectId, teamMemberId, startTime, endTime, description",
+        "++id, workspaceId, clientId, projectId, taskId, teamMemberId, startTime, endTime, description",
       invoices:
-        "++id, workspaceId, clientId, invoiceNumber, date, totalAmount, lineItems",
+        "++id, workspaceId, clientId, projectId, invoiceNumber, date, totalAmount, lineItems",
     });
   }
-}
 
-export const db = new TickTickClockDB();
+  static getInstance(): TickTickClockDB {
+    if (!TickTickClockDB.instance) {
+      TickTickClockDB.instance = new TickTickClockDB();
+    }
+    return TickTickClockDB.instance;
+  }
+
+  async initialize() {
+    if (!this.initializationPromise) {
+      this.initializationPromise = new Promise(async (resolve) => {
+        try {
+          await this.open();
+          console.log("Database initialized successfully");
+          resolve(true);
+        } catch (error) {
+          console.error("Database initialization error:", error);
+          resolve(false);
+        }
+      });
+    }
+    return this.initializationPromise;
+  }
+
+  async waitForReady(maxAttempts = 3, delayMs = 1000): Promise<boolean> {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const isReady = await this.initialize();
+      if (isReady) return true;
+
+      if (attempt < maxAttempts) {
+        console.log(
+          `Retrying database initialization (attempt ${attempt + 1}/${maxAttempts})...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+    return false;
+  }
+}
+// Only create the database instance in the browser
+const db = typeof window !== "undefined" ? new TickTickClockDB() : null;
+
+export { db };

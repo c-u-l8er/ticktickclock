@@ -16,6 +16,7 @@
     import { UsersSolid } from "flowbite-svelte-icons";
     import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
     import { get } from "svelte/store";
+    import { tick } from "svelte"; // Import tick
 
     let teamMembers: TeamMember[] = [];
     let newTeamMember: Omit<TeamMember, "id"> = {
@@ -34,9 +35,27 @@
         role: "team manager",
     };
 
+    // Use a reactive statement to fetch team members whenever selectedWorkspaceId changes
+    $: $selectedWorkspaceId, fetchTeamMembers();
+
     onMount(async () => {
         await fetchTeamMembers();
+        // Ensure newTeamMember has the correct initial workspaceId
+        newTeamMember.workspaceId = get(selectedWorkspaceId) || 0;
     });
+
+    // Reactive statement to update newTeamMember.workspaceId
+    $: {
+        const workspaceId = get(selectedWorkspaceId);
+        if (workspaceId) {
+            newTeamMember.workspaceId = workspaceId;
+            // Also update for editing to avoid inconsistencies
+            if (!editingTeamMemberId) {
+                // Only if not editing
+                editingTeamMember.workspaceId = workspaceId;
+            }
+        }
+    }
 
     async function fetchTeamMembers() {
         const workspaceId = get(selectedWorkspaceId);
@@ -48,6 +67,8 @@
             .where("workspaceId")
             .equals(workspaceId)
             .toArray();
+
+        //console.log("fetchTeamMembers called. Workspace ID:", workspaceId, "Team Members:", teamMembers); // Debugging
     }
 
     async function addTeamMember() {
@@ -64,7 +85,7 @@
 
         await db.teamMembers.add(teamMemberToAdd);
         newTeamMember = {
-            workspaceId: workspaceId,
+            workspaceId: workspaceId, // Keep current workspace
             name: "",
             billableRate: 0,
             costRate: 0,
@@ -82,7 +103,7 @@
             }
             await db.teamMembers.update(editingTeamMemberId, {
                 ...editingTeamMember,
-                workspaceId: workspaceId,
+                workspaceId: workspaceId, // Ensure workspaceId is updated
             });
             editingTeamMemberId = null;
             await fetchTeamMembers();
@@ -90,8 +111,10 @@
     }
 
     async function deleteTeamMember(id: number) {
-        await db.teamMembers.delete(id);
-        await fetchTeamMembers();
+        if (confirm("Are you sure you want to delete this team member?")) {
+            await db.teamMembers.delete(id);
+            await fetchTeamMembers();
+        }
     }
 
     async function startEdit(teamMember: TeamMember) {
@@ -99,6 +122,7 @@
         editingTeamMember = {
             ...teamMember,
         };
+        //console.log("Editing Team Member:", editingTeamMember);
     }
 
     async function cancelEdit() {

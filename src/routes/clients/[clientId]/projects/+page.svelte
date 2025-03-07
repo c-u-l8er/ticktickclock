@@ -83,7 +83,7 @@
     }
 
     async function viewProject(project: any) {
-        goto(`/clients/${project.clientId}/projects/${project.id}`);
+        goto(`/clients/${project.clientId}/projects/${project.id}/details`);
     }
 
     // Update saveEdit to include workspaceId

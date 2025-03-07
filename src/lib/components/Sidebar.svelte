@@ -115,12 +115,12 @@
         <div class="title">GENERATE</div>
         <SidebarGroup>
             <SidebarItem
-                href="/ai-prompts"
-                label="AI Prompts"
-                active={activeUrl === "/ai-prompts"}
+                href="/invoices"
+                label="Invoices"
+                active={activeUrl === "/invoices"}
             >
                 <svelte:fragment slot="icon">
-                    <LightbulbSolid
+                    <FileImportSolid
                         class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
                     />
                 </svelte:fragment>
@@ -137,12 +137,12 @@
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem
-                href="/invoices"
-                label="Invoices"
-                active={activeUrl === "/invoices"}
+                href="/ai-prompts"
+                label="AI Prompts"
+                active={activeUrl === "/ai-prompts"}
             >
                 <svelte:fragment slot="icon">
-                    <FileImportSolid
+                    <LightbulbSolid
                         class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
                     />
                 </svelte:fragment>

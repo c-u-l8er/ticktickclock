@@ -168,6 +168,7 @@
             date: invoiceDate,
             totalAmount: totalAmount,
             lineItems: lineItems,
+            projectId: selectedProject ?? undefined,
         };
 
         // Save the invoice to the database

@@ -1,1 +1,12 @@
-coming soon...
+<script lang="ts">
+    import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
+    import { onMount } from "svelte";
+
+    onMount(() => {
+        goto(
+            `/clients/${$page.params.clientId}/projects/${$page.params.projectId}/details`,
+            { replace: true },
+        );
+    });
+</script>

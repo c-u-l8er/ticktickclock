@@ -15,37 +15,38 @@
     />
 </svelte:head>
 
-<div class="container mx-auto py-8">
-    <h1 class="text-2xl font-bold mb-4">Free Invoice Template</h1>
-    <p class="mb-4">Make beautiful Invoices with one click!</p>
+<div
+    class="flex items-center justify-center min-h-screen"
+    style="margin-top: -100px;"
+>
+    <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-2xl"
+    >
+        <h1 class="text-2xl font-bold mb-4">Free Invoice Template</h1>
+        <p class="mb-4">Make beautiful Invoices with one click!</p>
 
-    <p class="mb-4">
-        Welcome to the simple yet eligant Invoice Generator, trusted by millions
-        of people. TickTickClock lets you instantly generate invoices with our
-        attractive invoice template straight from your web browser. The invoices
-        you create can be easily sent and paid online, or downloaded as a
-        convenient XLSX file.
-    </p>
+        <p class="mb-4">
+            Welcome to the simple yet elegant Invoice Generator, trusted by
+            millions of people. TickTickClock lets you instantly generate
+            invoices with our attractive invoice template straight from your web
+            browser. The invoices you create can be easily sent and paid online,
+            or downloaded as a convenient XLSX file.
+        </p>
 
-    <p class="mb-4">
-        Did we also mention that TickTickClock lets you generate an unlimited
-        number of Invoices?
-    </p>
+        <p class="mb-4">
+            Did we also mention that TickTickClock lets you generate an
+            unlimited number of Invoices?
+        </p>
 
-    <a href="/workspaces" class="mt-2">
-        <Button class="mt-2">Let's Go!</Button>
-    </a>
+        <a href="/workspaces" class="mt-2">
+            <Button class="mt-2">Let's Go!</Button>
+        </a>
 
-    <p class="copyright">
-        Made by <a href="https://wrand.cc">WRANDTEL</a><br />
-        &copy; {new Date().getFullYear()} TickTickClock. All rights reserved.
-    </p>
+        <p class="copyright mt-6 text-sm text-gray-500 dark:text-gray-400">
+            Made by <a href="https://wrand.cc" class="hover:underline"
+                >WRANDTEL</a
+            ><br />
+            &copy; {new Date().getFullYear()} TickTickClock. All rights reserved.
+        </p>
+    </div>
 </div>
-
-<style>
-    .copyright {
-        font-size: 0.8em;
-        color: gray;
-        margin-top: 20px;
-    }
-</style>

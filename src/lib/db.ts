@@ -21,6 +21,7 @@ export interface Project {
   name: string;
   description?: string;
   clientId: number;
+  rate: number;
 }
 
 export interface TeamMember {

@@ -12,6 +12,7 @@
         TableHead,
         TableHeadCell,
     } from "flowbite-svelte";
+    import { ProfileCardSolid } from "flowbite-svelte-icons";
     import { goto } from "$app/navigation";
     import {
         selectedWorkspaceId,
@@ -108,8 +109,10 @@
     }
 
     async function deleteClient(id: number) {
-        await db.clients.delete(id);
-        await fetchClients();
+        if (confirm("Are you sure you want to delete this client?")) {
+            await db.clients.delete(id);
+            await fetchClients();
+        }
     }
 
     async function startEdit(client: Client) {
@@ -129,35 +132,42 @@
         }
     }
 
-    function goToClientProjects(clientId: number) {
-        goto(`/clients/${clientId}/projects`);
+    function goToClient(clientId: number) {
+        goto(`/clients/${clientId}`);
     }
 </script>
 
 <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">Client Management</h2>
+    <h2 class="text-2xl font-bold mb-4 flex items-center">
+        <ProfileCardSolid class="w-6 h-6 mr-2" />
+        Client Management
+    </h2>
 
-    <!-- Add Client Form -->
-    <div class="mb-4">
-        <div class="mb-4">
-            <Label class="block mb-2">Name:</Label>
-            <Input type="text" bind:value={newClient.name} class="w-full" />
+    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div class="grid gap-4 mb-4">
+            <div>
+                <Label class="block mb-2">Name:</Label>
+                <Input type="text" bind:value={newClient.name} class="w-full" />
+            </div>
+
+            <div>
+                <Label class="block mb-2">Rate:</Label>
+                <Input
+                    type="number"
+                    bind:value={newClient.rate}
+                    class="w-full"
+                />
+            </div>
+
+            <div>
+                <Label class="block mb-2">Contact Details:</Label>
+                <Input
+                    type="text"
+                    bind:value={newClient.contactDetails}
+                    class="w-full"
+                />
+            </div>
         </div>
-
-        <div class="mb-4">
-            <Label class="block mb-2">Rate:</Label>
-            <Input type="number" bind:value={newClient.rate} class="w-full" />
-        </div>
-
-        <div class="mb-4">
-            <Label class="block mb-2">Contact Details:</Label>
-            <Input
-                type="text"
-                bind:value={newClient.contactDetails}
-                class="w-full"
-            />
-        </div>
-
         <Button on:click={addClient} class="mt-2">Add Client</Button>
     </div>
 
@@ -165,6 +175,7 @@
     <br />
 
     <!-- Client List -->
+    <h3 class="text-lg font-semibold mb-2">All Clients</h3>
     {#if clients.length > 0}
         <Table>
             <TableHead>
@@ -211,6 +222,9 @@
                                 >{client.contactDetails}</TableBodyCell
                             >
                             <TableBodyCell>
+                                <Button on:click={() => goToClient(client.id)}
+                                    >View</Button
+                                >
                                 <Button on:click={() => startEdit(client)}
                                     >Edit</Button
                                 >
@@ -218,11 +232,6 @@
                                     color="red"
                                     on:click={() => deleteClient(client.id)}
                                     >Delete</Button
-                                >
-                                <Button
-                                    on:click={() =>
-                                        goToClientProjects(client.id)}
-                                    >Projects</Button
                                 >
                             </TableBodyCell>
                         {/if}

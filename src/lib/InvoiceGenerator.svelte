@@ -6,6 +6,7 @@
         type Invoice,
         type LineItem,
         type Project,
+        type TeamMember, // Import
     } from "./db";
     import { onMount } from "svelte";
     import {
@@ -20,6 +21,7 @@
         TableHeadCell,
         Input,
     } from "flowbite-svelte";
+    import { FileImportSolid } from "flowbite-svelte-icons";
     import * as XLSX from "xlsx";
     import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
     import { get } from "svelte/store";
@@ -33,11 +35,13 @@
     let invoiceDate: string = new Date().toISOString().slice(0, 10);
     let invoice: Invoice | null = null;
     let lineItems: LineItem[] = [];
+    let teamMembers: TeamMember[] = [];
 
     // Reactive statement to fetch clients when workspace changes
     $: {
         if ($selectedWorkspaceId) {
             fetchClients();
+            fetchTeamMembers();
         } else {
             clients = [];
             projects = [];
@@ -48,6 +52,17 @@
 
     $: if (selectedClient) {
         fetchProjects(selectedClient);
+    }
+
+    async function fetchTeamMembers() {
+        const workspaceId = get(selectedWorkspaceId);
+        if (!workspaceId) {
+            return;
+        }
+        teamMembers = await db.teamMembers
+            .where("workspaceId")
+            .equals(workspaceId)
+            .toArray();
     }
 
     async function fetchClients() {
@@ -102,19 +117,44 @@
 
         for (const entry of timeEntries) {
             const client = clients.find((c) => c.id === entry.clientId);
+            const teamMember = teamMembers.find(
+                (tm) => tm.id === entry.teamMemberId,
+            ); // Get team member
+            const project = projects.find((p) => p.id === entry.projectId);
+
             if (client) {
                 const duration =
                     (new Date(entry.endTime).getTime() -
                         new Date(entry.startTime).getTime()) /
                     (1000 * 60 * 60);
-                const amount = duration * client.rate;
+
+                // Rate Hierarchy:  Project > Team Member > Client > workspace
+                let rate = client.rate; // Start with client rate
+                if (workspaceId) {
+                    const selectedWs = await db.workspaces.get(workspaceId);
+                    if (selectedWs) {
+                        rate = selectedWs.rate || 0;
+                    }
+                }
+
+                if (project && project.rate) {
+                    rate = project.rate;
+                }
+
+                if (teamMember && teamMember.billableRate) {
+                    rate = teamMember.billableRate;
+                }
+
+                const amount = duration * rate;
                 totalAmount += amount;
 
                 lineItems.push({
-                    description: entry.description,
+                    description: `${
+                        teamMember ? teamMember.name + ": " : ""
+                    }${entry.description}`, // Include team member name
                     startTime: new Date(entry.startTime).toLocaleString(),
                     endTime: new Date(entry.endTime).toLocaleString(),
-                    rate: client.rate,
+                    rate: rate,
                     hours: duration,
                     amount: amount,
                 });
@@ -158,40 +198,48 @@
 </script>
 
 <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">Invoice Generator</h2>
+    <h2 class="text-2xl font-bold mb-4 flex items-center">
+        <FileImportSolid class="w-6 h-6 mr-2" />
+        Invoice Generator
+    </h2>
 
-    <div class="mb-4">
-        <Label class="block mb-2">Client:</Label>
-        <Select bind:value={selectedClient} class="w-full">
-            <option value={null}>Select a client</option>
-            {#each clients as client (client.id)}
-                <option value={client.id}>{client.name}</option>
-            {/each}
-        </Select>
-    </div>
+    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div class="grid gap-4 mb-4">
+            <div>
+                <Label class="block mb-2">Client:</Label>
+                <Select bind:value={selectedClient} class="w-full">
+                    <option value={null}>Select a client</option>
+                    {#each clients as client (client.id)}
+                        <option value={client.id}>{client.name}</option>
+                    {/each}
+                </Select>
+            </div>
 
-    <div class="mb-4">
-        <Label class="block mb-2">Project (Optional):</Label>
-        <Select bind:value={selectedProject} class="w-full">
-            <option value={null}>All Projects</option>
-            {#each projects as project (project.id)}
-                <option value={project.id}>{project.name}</option>
-            {/each}
-        </Select>
-    </div>
+            <div>
+                <Label class="block mb-2">Project (Optional):</Label>
+                <Select bind:value={selectedProject} class="w-full">
+                    <option value={null}>All Projects</option>
+                    {#each projects as project (project.id)}
+                        <option value={project.id}>{project.name}</option>
+                    {/each}
+                </Select>
+            </div>
 
-    <div class="mb-4">
-        <Label class="block mb-2">Invoice Number:</Label>
-        <Input type="text" bind:value={invoiceNumber} class="w-full" />
+            <div>
+                <Label class="block mb-2">Invoice Number:</Label>
+                <Input type="text" bind:value={invoiceNumber} class="w-full" />
+            </div>
+            <div>
+                <Label class="block mb-2">Invoice Date:</Label>
+                <Input type="date" bind:value={invoiceDate} class="w-full" />
+            </div>
+        </div>
+        <Button
+            on:click={generateInvoice}
+            disabled={!selectedClient || !invoiceNumber}
+            >Generate Invoice</Button
+        >
     </div>
-    <div class="mb-4">
-        <Label class="block mb-2">Invoice Date:</Label>
-        <Input type="date" bind:value={invoiceDate} class="w-full" />
-    </div>
-    <Button
-        on:click={generateInvoice}
-        disabled={!selectedClient || !invoiceNumber}>Generate Invoice</Button
-    >
 
     <br />
     <br />

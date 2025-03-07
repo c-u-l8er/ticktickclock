@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { db, type Project } from "$lib/db";
+    import { db, type Project, type Client } from "$lib/db";
     import { onMount } from "svelte";
     import {
         Button,
@@ -11,10 +11,14 @@
         TableBodyRow,
         TableHead,
         TableHeadCell,
+        Tabs,
+        TabItem,
     } from "flowbite-svelte";
+    import { ProfileCardSolid } from "flowbite-svelte-icons";
     import { page } from "$app/stores";
     import { get } from "svelte/store";
     import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
+    import { goto } from "$app/navigation";
 
     export let data;
 
@@ -24,16 +28,20 @@
         name: "",
         description: "",
         clientId: 0,
+        rate: 0,
     };
     let editingProjectId: number | null = null;
     let editingProject: Omit<Project, "id" | "clientId"> = {
         name: "",
         description: "",
+        rate: 0,
     };
     let clientId: number;
+    let client: Client | null = null;
 
     onMount(async () => {
         clientId = parseInt($page.params.clientId);
+        client = await db.clients.get(clientId);
         await fetchProjects();
     });
 
@@ -69,8 +77,13 @@
             name: "",
             description: "",
             clientId: parseInt($page.params.clientId),
+            rate: 0,
         };
         await fetchProjects();
+    }
+
+    async function viewProject(project: any) {
+        goto(`/clients/${project.clientId}/projects/${project.id}`);
     }
 
     // Update saveEdit to include workspaceId
@@ -91,8 +104,10 @@
     }
 
     async function deleteProject(id: number) {
-        await db.projects.delete(id);
-        await fetchProjects();
+        if (confirm("Are you sure you want to delete this project?")) {
+            await db.projects.delete(id);
+            await fetchProjects();
+        }
     }
 
     async function startEdit(project: Project) {
@@ -100,6 +115,7 @@
         editingProject = {
             name: project.name,
             description: project.description,
+            rate: project.rate,
         };
     }
 
@@ -109,38 +125,63 @@
 </script>
 
 <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">
-        Project Management for Client ID: {clientId}
+    <h2 class="text-2xl font-bold mb-4 flex items-center">
+        <ProfileCardSolid class="w-6 h-6 mr-2" />
+        <a href="/clients">Client Management</a>
+        &nbsp;/ {client?.name}
     </h2>
 
-    <!-- Add Project Form -->
-    <div class="mb-4">
-        <div class="mb-4">
-            <Label class="block mb-2">Name:</Label>
-            <Input type="text" bind:value={newProject.name} class="w-full" />
-        </div>
+    <Tabs tabStyle="pill">
+        <TabItem title="Details" on:click={() => goto(`/clients/${clientId}`)}
+        ></TabItem>
+        <TabItem open title="Projects">
+            <!-- Add Project Form -->
+            <div>
+                <div class="mb-4">
+                    <Label class="block mb-2">Name:</Label>
+                    <Input
+                        type="text"
+                        bind:value={newProject.name}
+                        class="w-full"
+                    />
+                </div>
 
-        <div class="mb-4">
-            <Label class="block mb-2">Description:</Label>
-            <Input
-                type="text"
-                bind:value={newProject.description}
-                class="w-full"
-            />
-        </div>
+                <div class="mb-4">
+                    <Label class="block mb-2">Description:</Label>
+                    <Input
+                        type="text"
+                        bind:value={newProject.description}
+                        class="w-full"
+                    />
+                </div>
+                <div class="mb-4">
+                    <Label class="block mb-2">Rate:</Label>
+                    <Input
+                        type="number"
+                        bind:value={newProject.rate}
+                        class="w-full"
+                    />
+                </div>
 
-        <Button on:click={addProject} class="mt-2">Add Project</Button>
-    </div>
-
+                <Button on:click={addProject} class="mt-2">Add Project</Button>
+            </div>
+        </TabItem>
+        <TabItem
+            title="Invoices"
+            on:click={() => goto(`/clients/${clientId}/invoices`)}
+        ></TabItem>
+    </Tabs>
     <br />
     <br />
 
     <!-- Project List -->
     {#if projects.length > 0}
+        <h3 class="text-xl font-semibold mb-4">This Client's Projects</h3>
         <Table>
             <TableHead>
                 <TableHeadCell>Name</TableHeadCell>
                 <TableHeadCell>Description</TableHeadCell>
+                <TableHeadCell>Rate</TableHeadCell>
                 <TableHeadCell>Actions</TableHeadCell>
             </TableHead>
             <TableBody>
@@ -159,6 +200,12 @@
                                     bind:value={editingProject.description}
                                 /></TableBodyCell
                             >
+                            <TableBodyCell
+                                ><Input
+                                    type="number"
+                                    bind:value={editingProject.rate}
+                                /></TableBodyCell
+                            >
                             <TableBodyCell>
                                 <Button color="green" on:click={saveEdit}
                                     >Save</Button
@@ -171,7 +218,11 @@
                         {:else}
                             <TableBodyCell>{project.name}</TableBodyCell>
                             <TableBodyCell>{project.description}</TableBodyCell>
+                            <TableBodyCell>{project.rate}</TableBodyCell>
                             <TableBodyCell>
+                                <Button on:click={() => viewProject(project)}
+                                    >View</Button
+                                >
                                 <Button on:click={() => startEdit(project)}
                                     >Edit</Button
                                 >

@@ -27,7 +27,7 @@
     $: activeUrl = $page.url.pathname;
 </script>
 
-<Sidebar {activeUrl}>
+<Sidebar {activeUrl} class="bg-gray-50">
     <SidebarWrapper>
         <SidebarGroup>
             <SidebarItem

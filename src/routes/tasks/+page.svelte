@@ -25,7 +25,8 @@
     let newProjectId: number | null = null;
     let newClientId: number | null = null;
     let newTask: Omit<Task, "id"> = {
-        projectId: newProjectId || 0, // This will be set before adding
+        workspaceId: get(selectedWorkspaceId) || 0, // ADD THIS LINE
+        projectId: newProjectId || 0,
         clientId: newClientId || 0,
         name: "",
         description: "",
@@ -33,6 +34,7 @@
     };
     let editingTaskId: number | null = null;
     let editingTask: Omit<Task, "id"> = {
+        workspaceId: get(selectedWorkspaceId) || 0, // ADD THIS LINE
         projectId: 0,
         clientId: 0,
         name: "",
@@ -105,12 +107,14 @@
 
         const taskToAdd = {
             ...newTask,
+            workspaceId: workspaceId, //ADD THIS LINE
             projectId: newProjectId || 0,
             clientId: newClientId || 0,
         };
 
         await db.tasks.add(taskToAdd);
         newTask = {
+            workspaceId: workspaceId, //ADD THIS LINE
             projectId: newProjectId || 0,
             clientId: newClientId || 0,
             name: "",
@@ -127,7 +131,11 @@
             tasks = [];
             return;
         }
-        tasks = await db.tasks.toArray();
+
+        tasks = await db.tasks
+            .where("workspaceId")
+            .equals(workspaceId)
+            .toArray();
     }
 
     async function deleteTask(id: number) {
@@ -140,6 +148,7 @@
     async function startEdit(task: Task) {
         editingTaskId = task.id;
         editingTask = {
+            workspaceId: task.workspaceId, //ADD THIS LINE
             projectId: task.projectId,
             clientId: task.clientId,
             name: task.name,
@@ -153,8 +162,12 @@
     }
 
     async function saveEdit() {
-        if (editingTaskId) {
-            await db.tasks.update(editingTaskId, editingTask);
+        const workspaceId = get(selectedWorkspaceId);
+        if (editingTaskId && workspaceId) {
+            await db.tasks.update(editingTaskId, {
+                ...editingTask,
+                workspaceId: workspaceId,
+            });
             editingTaskId = null;
             await fetchTasks();
         }
@@ -176,6 +189,11 @@
     function getClientName(clientId: number): string {
         const client = clients.find((client) => client.id === clientId);
         return client ? client.name : "Unknown Client";
+    }
+
+    // Function to call when either the Client or Project is changed
+    async function onDropdownChange() {
+        await fetchTasks();
     }
 </script>
 
@@ -206,6 +224,7 @@
                         id="taskClientId"
                         bind:value={newClientId}
                         class="w-full"
+                        on:change={onDropdownChange}
                     >
                         <option value={null}>Select a Client</option>
                         {#each clients as client (client.id)}
@@ -222,6 +241,7 @@
                         id="taskProjectId"
                         bind:value={newProjectId}
                         class="w-full"
+                        on:change={onDropdownChange}
                     >
                         <option value={null}>Select a Project</option>
                         {#each projects as project (project.id)}

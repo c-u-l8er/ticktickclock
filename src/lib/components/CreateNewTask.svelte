@@ -2,12 +2,24 @@
     import { Button, Label, Input, Textarea, Select } from "flowbite-svelte";
     import { db, type Task } from "$lib/db";
     import { createEventDispatcher } from "svelte";
+    import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
+    import { get } from "svelte/store";
 
     const dispatch = createEventDispatcher();
     export let projectId: number;
     export let clientId: number;
 
     let newTask: Omit<Task, "id"> = {
+        workspaceId: get(selectedWorkspaceId) || 0,
+        projectId: projectId,
+        clientId: clientId,
+        name: "",
+        description: "",
+        status: "open",
+    };
+
+    $: newTask = {
+        workspaceId: get(selectedWorkspaceId) || 0,
         projectId: projectId,
         clientId: clientId,
         name: "",
@@ -19,6 +31,7 @@
         try {
             await db.tasks.add(newTask);
             newTask = {
+                workspaceId: get(selectedWorkspaceId) || 0,
                 projectId: projectId,
                 clientId: clientId,
                 name: "",

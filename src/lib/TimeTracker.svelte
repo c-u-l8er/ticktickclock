@@ -5,6 +5,7 @@
         type TimeEntry,
         type Project,
         type TeamMember,
+        type Task, // Import Task type
     } from "./db";
     import { onMount } from "svelte";
     import { browser } from "$app/environment";
@@ -31,9 +32,11 @@
     let clients: Client[] = [];
     let projects: Project[] = [];
     let teamMembers: TeamMember[] = [];
+    let tasks: Task[] = []; // Add tasks array
 
     let selectedClient: number | null = null;
     let selectedProject: number | null = null;
+    let selectedTask: number | null = null; // Add selectedTask
     let selectedTeamMember: number | null = null;
 
     let startTime: string | null = null;
@@ -45,6 +48,16 @@
     let dbReady = false;
     let workspaceIdReady = false; // NEW: Flag to indicate workspaceId readiness
 
+    // Function to fetch all necessary data
+    async function fetchData() {
+        if (dbReady && workspaceIdReady) {
+            await fetchClients();
+            await fetchProjects();
+            await fetchTeamMembers();
+            await fetchTimeEntries();
+        }
+    }
+
     onMount(async () => {
         if (browser) {
             dbReady = await db.waitForReady();
@@ -53,32 +66,22 @@
             const unsubscribe = selectedWorkspaceId.subscribe((value) => {
                 if (value !== null) {
                     workspaceIdReady = true;
-                    unsubscribe(); // Unsubscribe after the first valid value
+                    fetchData(); // Call fetchData when workspace changes
+                } else {
+                    workspaceIdReady = false;
                 }
             });
 
-            if (dbReady) {
-                // Fetch initial values, but only if workspaceId is already available
-                if (get(selectedWorkspaceId) !== null) {
-                    await fetchClients();
-                    await fetchProjects();
-                    await fetchTeamMembers();
-                    await fetchTimeEntries();
-                }
+            if (dbReady && get(selectedWorkspaceId) !== null) {
+                // Fetch initial data after DB is ready and workspace is selected
+                fetchData();
             }
         }
     });
 
-    // Reactive statement to re-run fetchTimeEntries and more when BOTH dbReady and workspaceIdReady are true
-    $: if (dbReady && workspaceIdReady) {
-        fetchClients();
-        fetchProjects();
-        fetchTeamMembers();
-        fetchTimeEntries();
-    }
-
-    $: if (selectedClient) {
-        fetchProjects();
+    // Reactive statement to re-run fetchTasks and more when BOTH dbReady and workspaceIdReady are true
+    $: if (selectedProject) {
+        fetchTasksForProject(); // Fetch tasks whenever selectedProject changes
     }
 
     async function fetchTeamMembers() {
@@ -117,6 +120,19 @@
         } catch (error) {
             console.error("Error fetching projects:", error);
         }
+    }
+
+    async function fetchTasksForProject() {
+        if (!selectedProject) {
+            tasks = [];
+            return;
+        }
+
+        tasks = await db.tasks
+            .where("projectId")
+            .equals(selectedProject)
+            .toArray();
+        selectedTask = null; // Reset selected task when project changes
     }
 
     async function fetchTimeEntries() {
@@ -171,6 +187,7 @@
                 workspaceId: workspaceId,
                 clientId: selectedClient,
                 projectId: selectedProject || undefined,
+                taskId: selectedTask || undefined, // Include the selected task
                 startTime: new Date(startTime),
                 endTime: new Date(endTime),
                 description: description,
@@ -182,6 +199,7 @@
             description = "";
             selectedClient = null;
             selectedProject = null;
+            selectedTask = null; // Reset selected task
             selectedTeamMember = null;
             await fetchTimeEntries();
         }
@@ -199,6 +217,7 @@
                 workspaceId: workspaceId,
                 clientId: selectedClient,
                 projectId: selectedProject || undefined,
+                taskId: selectedTask || undefined, // Include the selected task
                 startTime: new Date(startTime),
                 endTime: new Date(endTime),
                 description: description,
@@ -211,6 +230,7 @@
             description = "";
             selectedClient = null;
             selectedProject = null;
+            selectedTask = null; // Reset selected task
             selectedTeamMember = null;
             await fetchTimeEntries();
         }
@@ -223,6 +243,11 @@
     function getTeamMemberName(teamMemberId: number) {
         const member = teamMembers.find((m) => m.id === teamMemberId);
         return member ? member.name : "Unknown";
+    }
+
+    function getTaskName(taskId: number) {
+        const task = tasks.find((t) => t.id === taskId);
+        return task ? task.name : "Unknown Task";
     }
 </script>
 
@@ -272,6 +297,7 @@
                                 <Select
                                     bind:value={selectedProject}
                                     class="w-full"
+                                    on:change={fetchTasksForProject}
                                 >
                                     <option value={null}
                                         >Select a project (optional)</option
@@ -279,6 +305,25 @@
                                     {#each projects as project (project.id)}
                                         <option value={project.id}
                                             >{project.name}</option
+                                        >
+                                    {/each}
+                                </Select>
+                            </div>
+                        {/if}
+
+                        {#if selectedProject}
+                            <div>
+                                <Label class="block mb-2">Task:</Label>
+                                <Select
+                                    bind:value={selectedTask}
+                                    class="w-full"
+                                >
+                                    <option value={null}
+                                        >Select a task (optional)</option
+                                    >
+                                    {#each tasks as task (task.id)}
+                                        <option value={task.id}
+                                            >{task.name}</option
                                         >
                                     {/each}
                                 </Select>
@@ -348,6 +393,11 @@
                                     ?.name}:
                             {:else}
                                 No Project:
+                            {/if}
+                            {#if entry.taskId}
+                                {getTaskName(entry.taskId)}:
+                            {:else}
+                                No Task:
                             {/if}
                             {getTeamMemberName(entry.teamMemberId)}:
                             {clients.find((c) => c.id === entry.clientId)

@@ -35,6 +35,7 @@ export interface TeamMember {
 
 export interface Task {
   id?: number;
+  workspaceId: number;
   projectId: number; // Foreign key to the Project table
   clientId: number; // Foreign key to the Client table
   name: string;
@@ -102,13 +103,14 @@ export class TickTickClockDB extends Dexie {
 
   constructor() {
     super("TickTickClockDB");
-    this.version(6).stores({
+    this.version(8).stores({
       //Increment version number!
       workspaces: "++id, name, rate, clerkOrganizationId",
       clients: "++id, workspaceId, name, rate, contactDetails",
       projects: "++id, workspaceId, name, description, clientId, rate",
       teamMembers: "++id, workspaceId, name, billableRate, costRate, role",
-      tasks: "++id, projectId, name, description, rate, teamMemberId, status", // Define index for tasks
+      tasks:
+        "++id, workspaceId, projectId, clientId, name, description, rate, teamMemberId, status", // Define index for tasks
       timeEntries:
         "++id, workspaceId, clientId, projectId, taskId, teamMemberId, startTime, endTime, description",
       invoices:

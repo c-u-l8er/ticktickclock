@@ -93,6 +93,11 @@
                 title="Approvals"
                 on:click={() => goto(`/approvals`)}
             ></TabItem>
+            <TabItem
+                open={activeTab === "tasks"}
+                title="Tasks"
+                on:click={() => goto(`/tasks`)}
+            ></TabItem>
         </Tabs>
     </div>
 {:else}

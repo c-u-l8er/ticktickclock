@@ -40,9 +40,33 @@
 
         <Tabs tabStyle="pill">
             <TabItem open title="Details">
-                <p>Name: {client.name}</p>
-                <p>Rate: {client.rate}</p>
-                <p>Contact Details: {client.contactDetails}</p>
+                <div class="grid gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">
+                            Client Details
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-400">
+                                    Name
+                                </p>
+                                <p class="font-medium">{client.name}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-400">
+                                    Rate
+                                </p>
+                                <p class="font-medium">${client.rate}/hr</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Contact Details
+                        </p>
+                        <p class="font-medium">{client.contactDetails}</p>
+                    </div>
+                </div>
             </TabItem>
             <TabItem
                 open={activeTab === "projects"}

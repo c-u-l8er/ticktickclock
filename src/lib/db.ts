@@ -75,6 +75,18 @@ export interface LineItem {
   amount: number;
 }
 
+export interface ProjectTeamMember {
+  id?: number;
+  projectId: number;
+  teamMemberId: number;
+}
+
+export interface TaskTeamMember {
+  id?: number;
+  taskId: number;
+  teamMemberId: number;
+}
+
 export class TickTickClockDB extends Dexie {
   workspaces!: Table<Workspace, number>;
   clients!: Table<Client, number>;
@@ -89,7 +101,7 @@ export class TickTickClockDB extends Dexie {
 
   constructor() {
     super("TickTickClockDB");
-    this.version(5).stores({
+    this.version(6).stores({
       //Increment version number!
       workspaces: "++id, name, rate, clerkOrganizationId",
       clients: "++id, workspaceId, name, rate, contactDetails",
@@ -100,6 +112,8 @@ export class TickTickClockDB extends Dexie {
         "++id, workspaceId, clientId, projectId, taskId, teamMemberId, startTime, endTime, description",
       invoices:
         "++id, workspaceId, clientId, projectId, invoiceNumber, date, totalAmount, lineItems",
+      projectTeamMembers: "++id, projectId, teamMemberId",
+      taskTeamMembers: "++id, taskId, teamMemberId",
     });
   }
 

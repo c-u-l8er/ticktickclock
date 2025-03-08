@@ -16,7 +16,8 @@
     import { UsersSolid } from "flowbite-svelte-icons";
     import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
     import { get } from "svelte/store";
-    import { tick } from "svelte"; // Import tick
+    import { tick } from "svelte";
+    import { goto } from "$app/navigation";
 
     let teamMembers: TeamMember[] = [];
     let newTeamMember: Omit<TeamMember, "id"> = {
@@ -127,6 +128,10 @@
 
     async function cancelEdit() {
         editingTeamMemberId = null;
+    }
+
+    function viewTeamMember(id: number) {
+        goto(`/team-members/${id}`);
     }
 </script>
 
@@ -242,6 +247,11 @@
                             >
                             <TableBodyCell>{teamMember.role}</TableBodyCell>
                             <TableBodyCell>
+                                <Button
+                                    on:click={() =>
+                                        viewTeamMember(teamMember.id)}
+                                    >View</Button
+                                >
                                 <Button on:click={() => startEdit(teamMember)}
                                     >Edit</Button
                                 >

@@ -2,6 +2,7 @@
     import { page } from "$app/stores";
     import { db, type TeamMember, type Project, type Client } from "$lib/db";
     import { onMount } from "svelte";
+    import AssignTeamMemberToProject from "$lib/components/AssignTeamMemberToProject.svelte";
 
     let teamMembers: TeamMember[] = [];
     let isLoading = true;
@@ -56,44 +57,7 @@
     });
 </script>
 
-<br />
-{#if isLoading}
-    <div class="flex justify-center">
-        <div
-            class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"
-        ></div>
-    </div>
-{:else if error}
-    <div class="text-red-500">
-        <p>Error: {error.message}</p>
-        <button
-            class="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
-            on:click={loadData}
-        >
-            Retry
-        </button>
-    </div>
-{:else if client && project}
-    {#if teamMembers.length > 0}
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Billable Rate</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each teamMembers as teamMember (teamMember.id)}
-                    <tr>
-                        <td>{teamMember.name}</td>
-                        <td>{teamMember.role}</td>
-                        <td>${teamMember.billableRate}/hr</td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-    {:else}
-        <p>No team members assigned to this project yet.</p>
-    {/if}
+{#if project}
+    <!-- Add AssignTeamMemberToProject component here -->
+    <AssignTeamMemberToProject projectId={project.id} />
 {/if}

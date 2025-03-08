@@ -131,7 +131,7 @@
     }
 
     function viewTeamMember(id: number) {
-        goto(`/team-members/${id}`);
+        goto(`/team-members/${id}/details`);
     }
 </script>
 

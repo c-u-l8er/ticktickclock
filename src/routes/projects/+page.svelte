@@ -127,7 +127,7 @@
     }
 
     function goToClientProject(clientId: number, projectId: number) {
-        goto(`/clients/${clientId}/projects/${projectId}`);
+        goto(`/clients/${clientId}/projects/${projectId}/details`);
     }
 
     function getClientName(clientId: number): string {

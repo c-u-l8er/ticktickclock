@@ -4,8 +4,9 @@
     import { onMount } from "svelte";
 
     onMount(() => {
-        goto(`/team-members/${$page.params.teamMemberId}/details`, {
-            replace: true,
-        });
+        // the follow does not work bc it breaks the back button
+        // goto(`/team-members/${$page.params.teamMemberId}/details`, {
+        //     replace: true,
+        // });
     });
 </script>

@@ -5,9 +5,6 @@
 
     onMount(() => {
         // the follow does not work bc it breaks the back button
-        // goto(
-        //     `/clients/${$page.params.clientId}/projects/${$page.params.projectId}/details`,
-        //     { replace: true },
-        // );
+        // goto(`/tasks/${$page.params.taskId}/details`, { replace: true });
     });
 </script>

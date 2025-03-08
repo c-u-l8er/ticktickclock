@@ -19,6 +19,7 @@
     } from "flowbite-svelte";
     import { selectedWorkspaceId } from "$lib/stores/workspaceStore";
     import { get } from "svelte/store";
+    import { goto } from "$app/navigation";
 
     export let projectId: number; // Input project ID
 
@@ -138,6 +139,10 @@
         const member = teamMembers.find((m) => m.id === teamMemberId);
         return member ? member.name : "Unknown";
     }
+
+    function viewTeamMember(teamMemberId: number) {
+        goto(`/team-members/${teamMemberId}/details`);
+    }
 </script>
 
 <br />
@@ -156,6 +161,12 @@
                     <TableBodyCell>
                         <Button
                             size="xs"
+                            on:click={() => viewTeamMember(teamMemberId)}
+                            >View</Button
+                        >
+                        <Button
+                            size="xs"
+                            class="bg-red-800"
                             on:click={() =>
                                 removeTeamMemberFromProject(teamMemberId)}
                             >Remove</Button
@@ -169,27 +180,32 @@
     <p>No team members assigned to this project yet.</p>
 {/if}
 <br />
-<h3 class="text-lg font-semibold mb-4">Assign Team Member to Project</h3>
-
-<div class="mb-4">
-    <Label for="teamMemberSelect" class="block mb-2">Select Team Member:</Label>
-    <Select
-        id="teamMemberSelect"
-        bind:value={selectedTeamMember}
-        class="w-full"
-        disabled={unassignedTeamMembers.length === 0}
-    >
-        <option value={null}>
-            {#if unassignedTeamMembers.length === 0}
-                No team members available to assign.
-            {:else}
-                Select a team member
-            {/if}
-        </option>
-        {#each unassignedTeamMembers as teamMember (teamMember.id)}
-            <option value={teamMember.id}>{teamMember.name}</option>
-        {/each}
-    </Select>
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-lg font-semibold mb-2">Assign Team Member to Project</h3>
+    <div class="grid gap-4 mb-4">
+        <div>
+            <Label for="teamMemberSelect" class="block mb-2"
+                >Select Team Member:</Label
+            >
+            <Select
+                id="teamMemberSelect"
+                bind:value={selectedTeamMember}
+                class="w-full"
+                disabled={unassignedTeamMembers.length === 0}
+            >
+                <option value={null}>
+                    {#if unassignedTeamMembers.length === 0}
+                        No team members available to assign.
+                    {:else}
+                        Select a team member
+                    {/if}
+                </option>
+                {#each unassignedTeamMembers as teamMember (teamMember.id)}
+                    <option value={teamMember.id}>{teamMember.name}</option>
+                {/each}
+            </Select>
+        </div>
+    </div>
     <Button
         on:click={assignTeamMemberToProject}
         class="mt-2"

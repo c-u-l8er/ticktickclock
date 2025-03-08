@@ -5,9 +5,11 @@
 
     const dispatch = createEventDispatcher();
     export let projectId: number;
+    export let clientId: number;
 
     let newTask: Omit<Task, "id"> = {
         projectId: projectId,
+        clientId: clientId,
         name: "",
         description: "",
         status: "open",
@@ -18,6 +20,7 @@
             await db.tasks.add(newTask);
             newTask = {
                 projectId: projectId,
+                clientId: clientId,
                 name: "",
                 description: "",
                 status: "open",

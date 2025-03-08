@@ -36,6 +36,7 @@ export interface TeamMember {
 export interface Task {
   id?: number;
   projectId: number; // Foreign key to the Project table
+  clientId: number; // Foreign key to the Client table
   name: string;
   description?: string;
   rate?: number; // Hourly rate for the task, optional

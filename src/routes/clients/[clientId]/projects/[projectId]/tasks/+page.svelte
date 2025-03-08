@@ -10,21 +10,29 @@
         TableBodyRow,
         TableHead,
         TableHeadCell,
+        Button,
     } from "flowbite-svelte";
+    import { goto } from "$app/navigation";
 
     let tasks: Task[] = [];
     let isLoading = true;
     let error: Error | null = null;
     let project: Project | null = null;
     let client: Client | null = null;
+    let clientId: number;
+    let projectId: number;
+
+    onMount(() => {
+        loadData();
+    });
 
     async function loadData() {
         try {
             isLoading = true;
             error = null;
 
-            const clientId = parseInt($page.params.clientId);
-            const projectId = parseInt($page.params.projectId);
+            clientId = parseInt($page.params.clientId);
+            projectId = parseInt($page.params.projectId);
 
             if (isNaN(clientId) || isNaN(projectId)) {
                 throw new Error("Invalid client or project ID");
@@ -52,13 +60,13 @@
         }
     }
 
-    onMount(() => {
-        loadData();
-    });
-
     // Function to handle task creation
     function handleTaskCreated() {
         loadData(); // Reload the tasks when a new one is created
+    }
+
+    function viewTask(taskId: number) {
+        goto(`/tasks/${taskId}/details`);
     }
 </script>
 
@@ -86,6 +94,7 @@
                 <TableHeadCell>Name</TableHeadCell>
                 <TableHeadCell>Description</TableHeadCell>
                 <TableHeadCell>Status</TableHeadCell>
+                <TableHeadCell>Actions</TableHeadCell>
             </TableHead>
             <TableBody>
                 {#each tasks as task (task.id)}
@@ -98,6 +107,14 @@
                         <TableBodyCell>
                             <span class="capitalize">{task.status}</span>
                         </TableBodyCell>
+                        <TableBodyCell>
+                            <Button
+                                size="xs"
+                                on:click={() => viewTask(task.id)}
+                            >
+                                View
+                            </Button>
+                        </TableBodyCell>
                     </TableBodyRow>
                 {/each}
             </TableBody>
@@ -109,5 +126,9 @@
     {/if}
     <br />
 
-    <CreateNewTask projectId={project.id} on:taskCreated={handleTaskCreated} />
+    <CreateNewTask
+        projectId={project.id}
+        clientId={client.id}
+        on:taskCreated={handleTaskCreated}
+    />
 {/if}

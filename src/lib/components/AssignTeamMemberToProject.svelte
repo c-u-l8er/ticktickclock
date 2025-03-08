@@ -155,7 +155,6 @@
                     >
                     <TableBodyCell>
                         <Button
-                            color="red"
                             size="xs"
                             on:click={() =>
                                 removeTeamMemberFromProject(teamMemberId)}

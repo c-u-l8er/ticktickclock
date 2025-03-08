@@ -2,6 +2,15 @@
     import { page } from "$app/stores";
     import { db, type Task, type Client, type Project } from "$lib/db";
     import { onMount } from "svelte";
+    import CreateNewTask from "$lib/components/CreateNewTask.svelte";
+    import {
+        Table,
+        TableBody,
+        TableBodyCell,
+        TableBodyRow,
+        TableHead,
+        TableHeadCell,
+    } from "flowbite-svelte";
 
     let tasks: Task[] = [];
     let isLoading = true;
@@ -21,7 +30,6 @@
                 throw new Error("Invalid client or project ID");
             }
 
-            //Load client and project data from the db
             const [loadedProject, loadedClient, loadedTasks] =
                 await Promise.all([
                     db.projects.get(projectId),
@@ -47,6 +55,11 @@
     onMount(() => {
         loadData();
     });
+
+    // Function to handle task creation
+    function handleTaskCreated() {
+        loadData(); // Reload the tasks when a new one is created
+    }
 </script>
 
 <br />
@@ -68,25 +81,33 @@
     </div>
 {:else if client && project}
     {#if tasks.length > 0}
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
+        <Table hoverable={true}>
+            <TableHead>
+                <TableHeadCell>Name</TableHeadCell>
+                <TableHeadCell>Description</TableHeadCell>
+                <TableHeadCell>Status</TableHeadCell>
+            </TableHead>
+            <TableBody>
                 {#each tasks as task (task.id)}
-                    <tr>
-                        <td>{task.name}</td>
-                        <td>{task.description}</td>
-                        <td>{task.status}</td>
-                    </tr>
+                    <TableBodyRow>
+                        <TableBodyCell>{task.name}</TableBodyCell>
+                        <TableBodyCell
+                            >{task.description ||
+                                "No description"}</TableBodyCell
+                        >
+                        <TableBodyCell>
+                            <span class="capitalize">{task.status}</span>
+                        </TableBodyCell>
+                    </TableBodyRow>
                 {/each}
-            </tbody>
-        </table>
+            </TableBody>
+        </Table>
     {:else}
-        <p>No tasks added to this project yet.</p>
+        <p class="text-gray-500 dark:text-gray-400">
+            No tasks added to this project yet.
+        </p>
     {/if}
+    <br />
+
+    <CreateNewTask projectId={project.id} on:taskCreated={handleTaskCreated} />
 {/if}

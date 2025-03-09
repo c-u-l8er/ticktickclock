@@ -30,7 +30,7 @@
     .domain-container {
         /* width: 1000px; */
         margin: 0 auto;
-        padding: 0.25em 1.2em;
+        padding: 2px 1.2em;
     }
 
     .domain-nav a {

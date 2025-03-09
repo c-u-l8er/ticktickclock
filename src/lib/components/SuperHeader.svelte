@@ -12,7 +12,7 @@
                 <a href="https://subvind.com">COMMUNITY SOLUTIONS</a> &#125;
                 <a
                     href="https://ticktickclock.com"
-                    style="font-family: Helvetica, sans-serif; line-height: 0.85em;"
+                    style="font-family: Helvetica, sans-serif; line-height: 0.85em; font-size: 0.85em !important;"
                     >!!</a
                 >
             </div>

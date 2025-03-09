@@ -6,6 +6,7 @@
     // Ensure client-side only rendering
     import { browser } from "$app/environment";
     import { onMount } from "svelte";
+    import SuperHeader from "$lib/components/SuperHeader.svelte";
 
     let mounted = false;
 
@@ -15,7 +16,8 @@
 </script>
 
 {#if mounted}
-    <div class="flex flex-col h-screen">
+    <SuperHeader />
+    <div class="mt-8 flex flex-col h-screen">
         <Header />
 
         <div class="flex flex-1">

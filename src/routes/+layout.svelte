@@ -17,7 +17,7 @@
 
 {#if mounted}
     <SuperHeader />
-    <div class="mt-8 flex flex-col h-screen">
+    <div class="mt-7 flex flex-col h-screen">
         <Header />
 
         <div class="flex flex-1">

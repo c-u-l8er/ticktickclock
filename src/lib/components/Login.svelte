@@ -1,8 +1,5 @@
 <script lang="ts">
     import { Button, Input, Label } from "flowbite-svelte";
-    import { clerkFrontendApi, clerkReady } from "$lib/stores/workspaceStore";
-    import { get } from "svelte/store";
-    import { onMount } from "svelte";
 
     export let onCancel;
     export let onSuccess;
@@ -11,71 +8,65 @@
     let password = "";
     let error = "";
     let isLoading = false;
-    let isInitialized = false;
-
-    onMount(() => {
-        // Check if Clerk is already initialized
-        const clerk = get(clerkFrontendApi);
-        isInitialized = clerk?.loaded ?? false;
-
-        // Subscribe to changes in clerk readiness
-        const unsubscribe = clerkReady.subscribe((ready) => {
-            isInitialized = ready;
-        });
-
-        return () => {
-            unsubscribe();
-        };
-    });
-
-    async function waitForClerk(timeout = 5000): Promise<boolean> {
-        const startTime = Date.now();
-
-        while (Date.now() - startTime < timeout) {
-            const clerk = get(clerkFrontendApi);
-            if (clerk?.loaded && clerk.signIn) {
-                return true;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-        return false;
-    }
 
     async function handleSignIn() {
         isLoading = true;
         error = "";
 
         try {
-            // Wait for Clerk to be ready
-            const isReady = await waitForClerk();
-            if (!isReady) {
-                throw new Error("Authentication service failed to initialize");
-            }
-
-            const clerk = get(clerkFrontendApi);
-            if (!clerk?.signIn) {
+            if (!window.Clerk) {
                 throw new Error("Authentication service not available");
             }
 
             console.log("Attempting sign in...");
-            const result = await clerk.signIn.create({
+            // Correct way to use Clerk's sign-in method
+            const signInAttempt = await window.Clerk.client.signIn.create({
                 identifier: emailAddress,
-                password,
+                password: password,
             });
 
-            console.log("Sign in result:", result);
+            console.log("Sign in result:", signInAttempt);
 
-            if (result.status === "complete") {
+            if (signInAttempt.status === "complete") {
+                await window.Clerk.setActive({
+                    session: signInAttempt.createdSessionId,
+                });
                 console.log("✅ Sign in successful");
                 isLoading = false;
                 onSuccess();
             } else {
-                console.log("ℹ️ Sign in status:", result.status);
-                throw new Error(`Sign in incomplete: ${result.status}`);
+                console.log("ℹ️ Sign in status:", signInAttempt.status);
+                // Show appropriate message based on status
+                if (signInAttempt.status === "needs_second_factor") {
+                    error = "Two-factor authentication required";
+                } else if (signInAttempt.status === "needs_new_password") {
+                    error = "You need to set a new password";
+                } else if (signInAttempt.status === "needs_identifier") {
+                    error = "Please provide your email address";
+                } else {
+                    error = `Sign in incomplete: ${signInAttempt.status}`;
+                }
+                isLoading = false;
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error("❌ Sign in error:", err);
-            error = err.message;
+
+            // Extract and display the specific error message from Clerk
+            if (err.errors && err.errors.length > 0) {
+                // Clerk often returns errors in an array format
+                const errorMessages = err.errors
+                    .map((e) => e.message || e.longMessage || JSON.stringify(e))
+                    .join(". ");
+                error = errorMessages;
+            } else if (err.message) {
+                // Some errors might have a direct message property
+                error = err.message;
+            } else {
+                // Fallback for unexpected error formats
+                error =
+                    "Sign in failed. Please check your credentials and try again.";
+            }
+
             isLoading = false;
         }
     }
@@ -83,7 +74,11 @@
 
 <form class="flex flex-col space-y-4" on:submit|preventDefault={handleSignIn}>
     {#if error}
-        <p class="text-red-500">{error}</p>
+        <div
+            class="p-4 text-red-500 bg-red-100 border border-red-200 rounded-md"
+        >
+            {error}
+        </div>
     {/if}
 
     <div>
@@ -108,11 +103,9 @@
         />
     </div>
 
-    <Button type="submit" color="purple" disabled={isLoading || !isInitialized}>
+    <Button type="submit" color="purple" disabled={isLoading}>
         {#if isLoading}
             Signing In...
-        {:else if !isInitialized}
-            Waiting for Authentication...
         {:else}
             Sign In
         {/if}

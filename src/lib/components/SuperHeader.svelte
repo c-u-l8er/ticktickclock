@@ -51,7 +51,7 @@
         top: 0;
         left: 0;
         width: 100%;
-        padding: 0 0 1em;
+        height: 30px;
         z-index: 1000;
         font-family: "Courier New", monospace;
     }

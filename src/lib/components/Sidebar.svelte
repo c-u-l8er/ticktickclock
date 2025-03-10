@@ -6,7 +6,8 @@
         SidebarItem,
         SidebarWrapper,
         Button,
-        Modal, // import Modal from flowbite
+        Modal,
+        Spinner,
     } from "flowbite-svelte";
     import {
         BadgeCheckSolid,
@@ -19,81 +20,119 @@
         ChartPieSolid,
         LightbulbSolid,
         ArrowRightOutline,
-        CalendarMonthSolid, // Calendar icon
-        FileSolid, // Document for Timesheet
-        ListOutline, // List for Schedule
-        DollarOutline, // Wallet for Expenses
-        SunSolid, // Sun for Time Off
+        CalendarMonthSolid,
+        FileSolid,
+        ListOutline,
+        DollarOutline,
+        SunSolid,
         ClipboardListSolid,
-    } from "flowbite-svelte-icons"; // Replace with your desired icons
-    import { onMount } from "svelte";
-    import { clerkFrontendApi } from "$lib/stores/workspaceStore";
-    import { get } from "svelte/store";
-    import { afterUpdate } from "svelte";
+    } from "flowbite-svelte-icons";
     import Login from "$lib/components/Login.svelte";
     import Register from "$lib/components/Register.svelte";
+    import { onMount } from "svelte";
+    import { clerkReady } from "$lib/stores/workspaceStore";
+    import { writable } from "svelte/store";
 
     let spanClass = "flex-1 ms-3 whitespace-nowrap";
     $: activeUrl = `/${$page.url.pathname.split("/")[1]}`;
     $: activeUrl2 = `/${$page.url.pathname.split("/")[3]}`;
 
+    let isSignedIn = false;
+    let showAuthModal = writable(false); // Combined auth modal
+    let showLogin = writable(true); // Toggle between login and register
+    let clerkLoaded = false;
+
     onMount(() => {
-        console.log(activeUrl);
-        console.log(activeUrl2);
+        // Check if Clerk is already in the window object
+        checkClerkStatus();
+
+        // Set up a listener to check Clerk's status when clerkReady changes
+        const unsubscribe = clerkReady.subscribe((ready) => {
+            if (ready) {
+                checkClerkStatus();
+            }
+        });
+
+        return unsubscribe;
     });
 
-    let isSignedIn = false; // Default to signed out.
-    let showLoginModal = false;
-    let showRegisterModal = false;
+    function checkClerkStatus() {
+        const clerk = window.Clerk;
+        clerkLoaded = !!clerk;
 
-    afterUpdate(() => {
-        // Run this after every component update.  Could be inefficient, so improve if needed.
-        isSignedIn = get(clerkFrontendApi)?.session !== null;
-    });
+        // Use the proper method to check if user is signed in
+        if (clerk && clerk.user) {
+            isSignedIn = true;
+        } else {
+            isSignedIn = false;
+        }
+    }
 
     function handleSuccessfulAuth() {
-        showLoginModal = false;
-        showRegisterModal = false;
+        $showAuthModal = false;
+        isSignedIn = true;
+    }
+
+    function toggleAuthView() {
+        $showLogin = !$showLogin;
     }
 </script>
 
 <Sidebar {activeUrl} class="bg-gray-50">
     <SidebarWrapper>
-        {#if isSignedIn}
+        {#if !$clerkReady}
+            <div class="flex justify-center p-4">
+                <Spinner size="8" />
+                <p class="ml-2">Loading authentication...</p>
+            </div>
+        {:else if clerkLoaded}
             <SidebarGroup>
                 <SidebarItem
-                    href="/auth"
+                    href="#"
                     label="Sync With Cloud"
                     class="bg-gray-800 text-white hover:bg-gray-700 focus:ring-4 focus:ring-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                    on:click={() => ($showAuthModal = true)}
                 >
                     <svelte:fragment slot="icon">
                         <CloudArrowUpOutline class="w-6 h-6 text-white" />
                     </svelte:fragment>
                 </SidebarItem>
             </SidebarGroup>
+
+            <Modal
+                bind:open={$showAuthModal}
+                title={$showLogin ? "Login" : "Register"}
+            >
+                <div class="flex flex-col">
+                    {#if $showLogin}
+                        <Login
+                            onCancel={() => ($showAuthModal = false)}
+                            onSuccess={handleSuccessfulAuth}
+                        />
+                        <p class="text-center mt-2">
+                            Don't have an account?
+                            <button
+                                class="text-blue-500"
+                                on:click={toggleAuthView}>Register</button
+                            >
+                        </p>
+                    {:else}
+                        <Register
+                            onCancel={() => ($showAuthModal = false)}
+                            onSuccess={handleSuccessfulAuth}
+                        />
+                        <p class="text-center mt-2">
+                            Already have an account?
+                            <button
+                                class="text-blue-500"
+                                on:click={toggleAuthView}>Login</button
+                            >
+                        </p>
+                    {/if}
+                </div>
+            </Modal>
         {:else}
-            <Button color="purple" on:click={() => (showLoginModal = true)}
-                >Login</Button
-            >
-            <Button
-                color="alternative"
-                on:click={() => (showRegisterModal = true)}>Register</Button
-            >
-            <br />
-
-            <Modal bind:open={showLoginModal} title="Login">
-                <Login
-                    onCancel={() => (showLoginModal = false)}
-                    onSuccess={handleSuccessfulAuth}
-                />
-            </Modal>
-
-            <Modal bind:open={showRegisterModal} title="Register">
-                <Register
-                    onCancel={() => (showRegisterModal = false)}
-                    onSuccess={handleSuccessfulAuth}
-                />
-            </Modal>
+            <p class="p-3">Authentication service unavailable</p>
         {/if}
         <br />
         <div class="title">ANALOG</div>

@@ -2,7 +2,7 @@
     import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
     import { browser } from "$app/environment";
     import { onMount } from "svelte";
-    import { initializeClerk, clerkReady } from "$lib/stores/workspaceStore";
+    import { clerkReady } from "$lib/stores/workspaceStore";
     import Header from "$lib/components/Header.svelte";
     import Sidebar from "$lib/components/Sidebar.svelte";
     import SuperHeader from "$lib/components/SuperHeader.svelte";
@@ -13,11 +13,22 @@
     onMount(async () => {
         if (browser) {
             console.log("🔄 Initializing Clerk...");
-            const clerk = await initializeClerk(PUBLIC_CLERK_PUBLISHABLE_KEY);
+            const clerk = window.Clerk;
+
             if (clerk) {
-                console.log("✅ Clerk initialization complete");
+                try {
+                    await clerk.load({
+                        // No need to pass publishableKey here since it's already in the script tag
+                    });
+                    clerkReady.set(true);
+                    console.log("✅ Clerk initialization complete");
+                } catch (error) {
+                    console.error("❌ Clerk initialization error:", error);
+                    clerkReady.set(false);
+                }
             } else {
-                console.error("❌ Clerk initialization failed");
+                console.error("❌ Clerk not found on window object");
+                clerkReady.set(false);
             }
         }
         mounted = true;

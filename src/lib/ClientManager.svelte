@@ -168,7 +168,9 @@
                 />
             </div>
         </div>
-        <Button on:click={addClient} class="mt-2">Add Client</Button>
+        <Button on:click={addClient} class="mt-2" color="purple"
+            >Add Client</Button
+        >
     </div>
 
     <br />
@@ -222,10 +224,14 @@
                                 >{client.contactDetails}</TableBodyCell
                             >
                             <TableBodyCell>
-                                <Button on:click={() => goToClient(client.id)}
+                                <Button
+                                    color="purple"
+                                    on:click={() => goToClient(client.id)}
                                     >View</Button
                                 >
-                                <Button on:click={() => startEdit(client)}
+                                <Button
+                                    color="purple"
+                                    on:click={() => startEdit(client)}
                                     >Edit</Button
                                 >
                                 <Button

@@ -115,7 +115,9 @@
                 </select>
             </div>
             <!-- Go to Workspace Button -->
-            <Button size="sm" on:click={goToSelectedWorkspace}>!!</Button>
+            <Button color="purple" size="sm" on:click={goToSelectedWorkspace}
+                >!!</Button
+            >
         {/if}
     </div>
 

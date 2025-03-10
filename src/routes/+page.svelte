@@ -40,7 +40,7 @@
         </p>
 
         <a href="/workspaces" class="mt-2">
-            <Button class="mt-2">Let's Go!</Button>
+            <Button color="purple" class="mt-2">Let's Go!</Button>
         </a>
 
         <p class="copyright mt-6 text-sm text-gray-500 dark:text-gray-400">

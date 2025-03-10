@@ -176,7 +176,9 @@
                 </Select>
             </div>
         </div>
-        <Button on:click={addTeamMember} class="mt-2">Add Team Member</Button>
+        <Button color="purple" on:click={addTeamMember} class="mt-2"
+            >Add Team Member</Button
+        >
     </div>
 
     <br />
@@ -248,11 +250,14 @@
                             <TableBodyCell>{teamMember.role}</TableBodyCell>
                             <TableBodyCell>
                                 <Button
+                                    color="purple"
                                     on:click={() =>
                                         viewTeamMember(teamMember.id)}
                                     >View</Button
                                 >
-                                <Button on:click={() => startEdit(teamMember)}
+                                <Button
+                                    color="purple"
+                                    on:click={() => startEdit(teamMember)}
                                     >Edit</Button
                                 >
                                 <Button

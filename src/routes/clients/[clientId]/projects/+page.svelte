@@ -163,7 +163,9 @@
                     />
                 </div>
 
-                <Button on:click={addProject} class="mt-2">Add Project</Button>
+                <Button color="purple" on:click={addProject} class="mt-2"
+                    >Add Project</Button
+                >
             </div>
         </TabItem>
         <TabItem
@@ -220,10 +222,14 @@
                             <TableBodyCell>{project.description}</TableBodyCell>
                             <TableBodyCell>{project.rate}</TableBodyCell>
                             <TableBodyCell>
-                                <Button on:click={() => viewProject(project)}
+                                <Button
+                                    color="purple"
+                                    on:click={() => viewProject(project)}
                                     >View</Button
                                 >
-                                <Button on:click={() => startEdit(project)}
+                                <Button
+                                    color="purple"
+                                    on:click={() => startEdit(project)}
                                     >Edit</Button
                                 >
                                 <Button

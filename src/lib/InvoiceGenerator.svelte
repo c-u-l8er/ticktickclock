@@ -236,6 +236,7 @@
             </div>
         </div>
         <Button
+            color="purple"
             on:click={generateInvoice}
             disabled={!selectedClient || !invoiceNumber}
             >Generate Invoice</Button
@@ -280,7 +281,9 @@
             </Table>
             <p>Total: ${invoice.totalAmount.toFixed(2)}</p>
 
-            <Button on:click={downloadInvoice}>Download Invoice (XLSX)</Button>
+            <Button color="purple" on:click={downloadInvoice}
+                >Download Invoice (XLSX)</Button
+            >
         </div>
     {/if}
 </div>

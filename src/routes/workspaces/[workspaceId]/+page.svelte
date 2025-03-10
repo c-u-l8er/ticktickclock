@@ -71,7 +71,9 @@
                         placeholder="Default Rate"
                     />
                 </div>
-                <Button on:click={saveDetails}>Save Details</Button>
+                <Button color="purple" on:click={saveDetails}
+                    >Save Details</Button
+                >
             </TabItem>
             <TabItem
                 open={activeTab === "clients"}

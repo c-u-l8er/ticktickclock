@@ -79,5 +79,5 @@
             </Select>
         </div>
     </div>
-    <Button on:click={createTask}>Create Task</Button>
+    <Button color="purple" on:click={createTask}>Create Task</Button>
 </div>

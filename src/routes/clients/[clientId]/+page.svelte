@@ -38,7 +38,7 @@
             &nbsp;/ {client?.name}
         </h2>
 
-        <Tabs tabStyle="pill">
+        <Tabs tabStyle="pill" activeClasses="bg-purple">
             <TabItem open title="Details">
                 <div class="grid gap-4">
                     <div>

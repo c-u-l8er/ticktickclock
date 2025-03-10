@@ -152,6 +152,7 @@
                         >
                         <TableBodyCell>
                             <Button
+                                color="purple"
                                 size="xs"
                                 on:click={() => viewTeamMember(teamMemberId)}
                                 >View</Button

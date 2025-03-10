@@ -3,6 +3,7 @@
     import { db, type Task } from "$lib/db";
     import { onMount } from "svelte";
     import AssignTeamMemberToTask from "$lib/components/AssignTeamMemberToTask.svelte"; // Import
+    import { Button } from "flowbite-svelte";
 
     let task: Task | null = null;
     let isLoading = true;
@@ -46,12 +47,13 @@
     {:else if error}
         <div class="text-red-500">
             <p>Error: {error.message}</p>
-            <button
-                class="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+            <Button
+                color="purple"
+                class="mt-2 text-white px-4 py-2 rounded"
                 on:click={loadData}
             >
                 Retry
-            </button>
+            </Button>
         </div>
     {:else if task}
         <div class="grid gap-4">

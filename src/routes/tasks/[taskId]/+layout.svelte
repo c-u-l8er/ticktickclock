@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from "$app/stores";
-    import { Tabs, TabItem } from "flowbite-svelte";
+    import { Tabs, TabItem, Button } from "flowbite-svelte";
     import { ListOutline } from "flowbite-svelte-icons";
     import { goto } from "$app/navigation";
     import { db } from "$lib/db";
@@ -62,12 +62,13 @@
 {:else if error}
     <div class="p-4 text-red-500">
         <p>Error: {error.message}</p>
-        <button
-            class="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+        <Button
+            color="purple"
+            class="mt-2 text-white px-4 py-2 rounded"
             on:click={() => loadData()}
         >
             Retry
-        </button>
+        </Button>
     </div>
 {:else if task}
     <div class="p-4">
@@ -109,12 +110,13 @@
 {:else}
     <div class="p-4 text-red-500">
         <p>No data available</p>
-        <button
-            class="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+        <Button
+            color="purple"
+            class="mt-2 text-white px-4 py-2 rounded"
             on:click={() => loadData()}
         >
             Retry
-        </button>
+        </Button>
     </div>
 {/if}
 

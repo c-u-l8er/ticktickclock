@@ -184,7 +184,9 @@
                 </Select>
             </div>
         </div>
-        <Button on:click={addProject} class="mt-2">Add Project</Button>
+        <Button color="purple" on:click={addProject} class="mt-2"
+            >Add Project</Button
+        >
     </div>
 
     <br />
@@ -255,13 +257,18 @@
                             >
                             <TableBodyCell>
                                 <Button
+                                    color="purple"
                                     on:click={() =>
                                         goToClientProject(
                                             project.clientId,
                                             project.id,
-                                        )}>View</Button
+                                        )}
                                 >
-                                <Button on:click={() => startEdit(project)}
+                                    View
+                                </Button>
+                                <Button
+                                    color="purple"
+                                    on:click={() => startEdit(project)}
                                     >Edit</Button
                                 >
                                 <Button

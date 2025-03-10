@@ -133,7 +133,7 @@
                 />
             </div>
         </div>
-        <Button color="primary" on:click={addWorkspace}>Add Workspace</Button>
+        <Button color="purple" on:click={addWorkspace}>Add Workspace</Button>
     </div>
 
     <!-- Workspaces List -->
@@ -191,6 +191,7 @@
                                     <TableBodyCell>
                                         <div class="flex gap-2">
                                             <Button
+                                                color="purple"
                                                 size="sm"
                                                 on:click={() => {
                                                     selectWorkspace(
@@ -203,7 +204,7 @@
                                             </Button>
                                             <Button
                                                 size="sm"
-                                                color="primary"
+                                                color="purple"
                                                 on:click={() =>
                                                     startEdit(workspace)}
                                             >

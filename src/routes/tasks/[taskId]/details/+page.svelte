@@ -1,6 +1,7 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import { db, type Task, type Project } from "$lib/db";
+    import { Button } from "flowbite-svelte";
     import { onMount } from "svelte";
 
     let task: Task | null = null;
@@ -50,12 +51,13 @@
     {:else if error}
         <div class="text-red-500">
             <p>Error: {error.message}</p>
-            <button
-                class="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+            <Button
+                color="purple"
+                class="mt-2 text-white px-4 py-2 rounded"
                 on:click={loadData}
             >
                 Retry
-            </button>
+            </Button>
         </div>
     {:else if task}
         <div class="grid gap-4">

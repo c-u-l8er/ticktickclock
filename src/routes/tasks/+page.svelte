@@ -276,7 +276,9 @@
                     </Select>
                 </div>
             </div>
-            <Button on:click={addTask} class="mt-2">Add Task</Button>
+            <Button color="purple" on:click={addTask} class="mt-2"
+                >Add Task</Button
+            >
         </div>
 
         <br />
@@ -377,6 +379,7 @@
                                 <TableBodyCell>{task.status}</TableBodyCell>
                                 <TableBodyCell>
                                     <Button
+                                        color="purple"
                                         on:click={() =>
                                             goToProjectTask(task.id)}
                                         >View</Button

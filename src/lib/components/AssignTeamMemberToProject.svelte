@@ -160,13 +160,14 @@
                     >
                     <TableBodyCell>
                         <Button
+                            color="purple"
                             size="xs"
                             on:click={() => viewTeamMember(teamMemberId)}
                             >View</Button
                         >
                         <Button
+                            color="red"
                             size="xs"
-                            class="bg-red-800"
                             on:click={() =>
                                 removeTeamMemberFromProject(teamMemberId)}
                             >Remove</Button
@@ -207,6 +208,7 @@
         </div>
     </div>
     <Button
+        color="purple"
         on:click={assignTeamMemberToProject}
         class="mt-2"
         disabled={!selectedTeamMember}>Assign Team Member</Button

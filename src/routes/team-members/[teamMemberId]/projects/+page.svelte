@@ -31,6 +31,7 @@
                         <TableBodyCell>{project.description}</TableBodyCell>
                         <TableBodyCell>
                             <Button
+                                color="purple"
                                 size="xs"
                                 on:click={() =>
                                     viewProject(project.clientId, project.id)}

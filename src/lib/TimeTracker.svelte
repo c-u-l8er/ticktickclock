@@ -260,7 +260,7 @@
             Time Tracking Management
         </h2>
 
-        <Tabs tabStyle="pill">
+        <Tabs tabStyle="pill" color="purple">
             <TabItem open title="Auto Entry">
                 <div class="p-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div class="grid gap-4 mb-4">
@@ -340,6 +340,7 @@
                     </div>
                     {#if !isTracking}
                         <Button
+                            color="purple"
                             on:click={startTracking}
                             disabled={!selectedClient}>Start Tracking</Button
                         >
@@ -372,6 +373,7 @@
                         </div>
                     </div>
                     <Button
+                        color="purple"
                         on:click={addManualEntry}
                         disabled={!selectedClient || !startTime || !endTime}
                         >Add Manual Entry</Button

@@ -3,6 +3,7 @@
     import { db, type TimeEntry, type Task } from "$lib/db";
     import { onMount } from "svelte";
     import {
+        Button,
         Table,
         TableBody,
         TableBodyCell,
@@ -60,12 +61,13 @@
 {:else if error}
     <div class="text-red-500">
         <p>Error: {error.message}</p>
-        <button
-            class="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+        <Button
+            color="purple"
+            class="mt-2 text-white px-4 py-2 rounded"
             on:click={loadData}
         >
             Retry
-        </button>
+        </Button>
     </div>
 {:else if task}
     {#if timeEntries.length > 0}

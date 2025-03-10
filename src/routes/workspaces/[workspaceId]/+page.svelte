@@ -52,7 +52,11 @@
         </h2>
 
         <Tabs tabStyle="pill">
-            <TabItem open={activeTab === "details"} title="Details">
+            <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
+                open={activeTab === "details"}
+                title="Details"
+            >
                 <div class="mb-4">
                     <Label for="name" class="block mb-2">Name</Label>
                     <Input
@@ -76,26 +80,31 @@
                 >
             </TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "clients"}
                 title="Clients"
                 on:click={() => goto(`/clients`)}
             ></TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "projects"}
                 title="Projects"
                 on:click={() => goto(`/projects`)}
             ></TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "team-members"}
                 title="Team Members"
                 on:click={() => goto(`/team-members`)}
             ></TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "approvals"}
                 title="Approvals"
                 on:click={() => goto(`/approvals`)}
             ></TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "tasks"}
                 title="Tasks"
                 on:click={() => goto(`/tasks`)}

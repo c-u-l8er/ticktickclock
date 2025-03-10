@@ -132,9 +132,16 @@
     </h2>
 
     <Tabs tabStyle="pill">
-        <TabItem title="Details" on:click={() => goto(`/clients/${clientId}`)}
+        <TabItem
+            activeClasses="bg-purple-700 rounded-lg p-3 text-white"
+            title="Details"
+            on:click={() => goto(`/clients/${clientId}`)}
         ></TabItem>
-        <TabItem open title="Projects">
+        <TabItem
+            activeClasses="bg-purple-700 rounded-lg p-3 text-white"
+            open
+            title="Projects"
+        >
             <!-- Add Project Form -->
             <div>
                 <div class="mb-4">
@@ -169,6 +176,7 @@
             </div>
         </TabItem>
         <TabItem
+            activeClasses="bg-purple-700 rounded-lg p-3 text-white"
             title="Invoices"
             on:click={() => goto(`/clients/${clientId}/invoices`)}
         ></TabItem>

@@ -98,6 +98,7 @@
 
         <Tabs tabStyle="pill" contentClass="displayNone">
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "details" ||
                     $page.url.pathname ===
                         `/clients/${clientId}/projects/${projectId}`}
@@ -105,21 +106,25 @@
                 on:click={() => handleTabChange("details")}
             />
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "team-members"}
                 title="Team Members"
                 on:click={() => handleTabChange("team-members")}
             />
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "tasks"}
                 title="Tasks"
                 on:click={() => handleTabChange("tasks")}
             />
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "time-entries"}
                 title="Time Entries"
                 on:click={() => handleTabChange("time-entries")}
             />
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "invoices"}
                 title="Invoices"
                 on:click={() => handleTabChange("invoices")}

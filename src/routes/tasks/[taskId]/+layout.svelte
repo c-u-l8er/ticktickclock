@@ -80,12 +80,14 @@
 
         <Tabs tabStyle="pill" contentClass="displayNone">
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "details" ||
                     $page.url.pathname === `/tasks/${$page.params.taskId}`}
                 title="Details"
                 on:click={() => handleTabChange("details")}
             />
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "project"}
                 title="Project"
                 on:click={() =>
@@ -94,11 +96,13 @@
                     )}
             />
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "team-members"}
                 title="Team Members"
                 on:click={() => handleTabChange("team-members")}
             />
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "time-entries"}
                 title="Time Entries"
                 on:click={() => handleTabChange("time-entries")}

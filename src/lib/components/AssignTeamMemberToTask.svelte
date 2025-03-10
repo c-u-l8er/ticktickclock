@@ -201,6 +201,7 @@
             </div>
         </div>
         <Button
+            color="purple"
             on:click={assignTeamMemberToTask}
             class="mt-2"
             disabled={!selectedTeamMember}>Assign Team Member</Button

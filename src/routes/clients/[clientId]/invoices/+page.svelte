@@ -45,13 +45,21 @@
         &nbsp;/ {client?.name}
     </h2>
     <Tabs tabStyle="pill">
-        <TabItem title="Details" on:click={() => goto(`/clients/${clientId}`)}
+        <TabItem
+            activeClasses="bg-purple-700 rounded-lg p-3 text-white"
+            title="Details"
+            on:click={() => goto(`/clients/${clientId}`)}
         ></TabItem>
         <TabItem
+            activeClasses="bg-purple-700 rounded-lg p-3 text-white"
             title="Projects"
             on:click={() => goto(`/clients/${clientId}/projects`)}
         ></TabItem>
-        <TabItem open title="Invoices">
+        <TabItem
+            activeClasses="bg-purple-700 rounded-lg p-3 text-white"
+            open
+            title="Invoices"
+        >
             {#if invoices.length > 0}
                 <Table>
                     <TableHead>

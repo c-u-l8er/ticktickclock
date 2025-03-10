@@ -39,7 +39,11 @@
         </h2>
 
         <Tabs tabStyle="pill" activeClasses="bg-purple">
-            <TabItem open title="Details">
+            <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
+                open
+                title="Details"
+            >
                 <div class="grid gap-4">
                     <div>
                         <h3 class="text-lg font-semibold mb-2">
@@ -69,11 +73,13 @@
                 </div>
             </TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "projects"}
                 title="Projects"
                 on:click={() => handleTabChange("projects")}
             ></TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "invoices"}
                 title="Invoices"
                 on:click={() => handleTabChange("invoices")}

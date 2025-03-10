@@ -261,7 +261,11 @@
         </h2>
 
         <Tabs tabStyle="pill" color="purple">
-            <TabItem open title="Auto Entry">
+            <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
+                open
+                title="Auto Entry"
+            >
                 <div class="p-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div class="grid gap-4 mb-4">
                         <div>
@@ -351,7 +355,10 @@
                     {/if}
                 </div>
             </TabItem>
-            <TabItem title="Manual Entry">
+            <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
+                title="Manual Entry"
+            >
                 <div class="p-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div class="grid gap-4 mb-4">
                         <div>

@@ -24,6 +24,7 @@
 
         <Tabs tabStyle="pill" contentClass="displayNone">
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "details" ||
                     $page.url.pathname ===
                         `/team-members/${$page.params.teamMemberId}`}
@@ -31,16 +32,19 @@
                 on:click={() => handleTabChange("details")}
             ></TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "projects"}
                 title="Projects"
                 on:click={() => handleTabChange("projects")}
             ></TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "tasks"}
                 title="Tasks"
                 on:click={() => handleTabChange("tasks")}
             ></TabItem>
             <TabItem
+                activeClasses="bg-purple-700 rounded-lg p-3 text-white"
                 open={activeTab === "time-entries"}
                 title="Time Entries"
                 on:click={() => handleTabChange("time-entries")}

@@ -384,7 +384,9 @@
                                             goToProjectTask(task.id)}
                                         >View</Button
                                     >
-                                    <Button on:click={() => startEdit(task)}
+                                    <Button
+                                        color="purple"
+                                        on:click={() => startEdit(task)}
                                         >Edit</Button
                                     >
                                     <Button

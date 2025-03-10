@@ -32,6 +32,7 @@
     import { onMount } from "svelte";
     import { clerkReady } from "$lib/stores/workspaceStore";
     import { writable } from "svelte/store";
+    import { goto } from "$app/navigation";
 
     let spanClass = "flex-1 ms-3 whitespace-nowrap";
     $: activeUrl = `/${$page.url.pathname.split("/")[1]}`;
@@ -86,51 +87,66 @@
                 <p class="ml-2">Loading authentication...</p>
             </div>
         {:else if clerkLoaded}
-            <SidebarGroup>
-                <SidebarItem
-                    href="#"
-                    label="Sync With Cloud"
-                    class="bg-gray-800 text-white hover:bg-gray-700 focus:ring-4 focus:ring-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                    on:click={() => ($showAuthModal = true)}
-                >
-                    <svelte:fragment slot="icon">
-                        <CloudArrowUpOutline class="w-6 h-6 text-white" />
-                    </svelte:fragment>
-                </SidebarItem>
-            </SidebarGroup>
+            {#if !isSignedIn}
+                <SidebarGroup>
+                    <SidebarItem
+                        href="#"
+                        label="Sync With Cloud"
+                        class="bg-gray-800 text-white hover:bg-gray-700 focus:ring-4 focus:ring-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                        on:click={() => ($showAuthModal = true)}
+                    >
+                        <svelte:fragment slot="icon">
+                            <CloudArrowUpOutline class="w-6 h-6 text-white" />
+                        </svelte:fragment>
+                    </SidebarItem>
+                </SidebarGroup>
 
-            <Modal
-                bind:open={$showAuthModal}
-                title={$showLogin ? "Login" : "Register"}
-            >
-                <div class="flex flex-col">
-                    {#if $showLogin}
-                        <Login
-                            onCancel={() => ($showAuthModal = false)}
-                            onSuccess={handleSuccessfulAuth}
-                        />
-                        <p class="text-center mt-2">
-                            Don't have an account?
-                            <button
-                                class="text-blue-500"
-                                on:click={toggleAuthView}>Register</button
-                            >
-                        </p>
-                    {:else}
-                        <Register
-                            onCancel={() => ($showAuthModal = false)}
-                            onSuccess={handleSuccessfulAuth}
-                        />
-                        <p class="text-center mt-2">
-                            Already have an account?
-                            <button
-                                class="text-blue-500"
-                                on:click={toggleAuthView}>Login</button
-                            >
-                        </p>
-                    {/if}
-                </div>
-            </Modal>
+                <Modal
+                    bind:open={$showAuthModal}
+                    title={$showLogin ? "Login" : "Register"}
+                >
+                    <div class="flex flex-col">
+                        {#if $showLogin}
+                            <Login
+                                onCancel={() => ($showAuthModal = false)}
+                                onSuccess={handleSuccessfulAuth}
+                            />
+                            <p class="text-center mt-2">
+                                Don't have an account?
+                                <button
+                                    class="text-blue-500"
+                                    on:click={toggleAuthView}>Register</button
+                                >
+                            </p>
+                        {:else}
+                            <Register
+                                onCancel={() => ($showAuthModal = false)}
+                                onSuccess={handleSuccessfulAuth}
+                            />
+                            <p class="text-center mt-2">
+                                Already have an account?
+                                <button
+                                    class="text-blue-500"
+                                    on:click={toggleAuthView}>Login</button
+                                >
+                            </p>
+                        {/if}
+                    </div>
+                </Modal>
+            {:else}
+                <SidebarGroup>
+                    <SidebarItem
+                        href="#"
+                        label="Sync With Cloud"
+                        class="bg-gray-800 text-white hover:bg-gray-700 focus:ring-4 focus:ring-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                        on:click={() => goto(`/sync`)}
+                    >
+                        <svelte:fragment slot="icon">
+                            <CloudArrowUpOutline class="w-6 h-6 text-white" />
+                        </svelte:fragment>
+                    </SidebarItem>
+                </SidebarGroup>
+            {/if}
         {:else}
             <p class="p-3">Authentication service unavailable</p>
         {/if}

@@ -9,6 +9,7 @@
         Dropdown,
         DropdownItem,
         DropdownDivider,
+        Avatar,
     } from "flowbite-svelte";
     import { ChevronDownOutline } from "flowbite-svelte-icons";
     import { FileImportSolid } from "flowbite-svelte-icons";
@@ -17,15 +18,77 @@
     import {
         selectedWorkspaceId,
         workspaces,
+        clerkReady,
     } from "$lib/stores/workspaceStore";
     import { goto } from "$app/navigation";
 
     let hidden = true;
     $: activeUrl = $page.url.pathname;
     let localSelectedWorkspaceId: number | null = null;
+    let user: any = null;
+    let isSignedIn = false;
+    let userProfileImage = "";
+
+    // Function to get user data from Clerk
+    function updateUserData() {
+        const clerk = window.Clerk;
+        if (clerk && clerk.user) {
+            user = clerk.user;
+            userProfileImage = user.imageUrl || "";
+            isSignedIn = true;
+            console.log("User data updated:", user.fullName, userProfileImage);
+        } else {
+            user = null;
+            userProfileImage = "";
+            isSignedIn = false;
+            console.log("No user found or user not signed in");
+        }
+    }
 
     onMount(async () => {
         await fetchWorkspaces();
+
+        // Set up a listener for Clerk's authentication state changes
+        if (window.Clerk) {
+            // Listen for user changes
+            window.Clerk.addListener(({ user }) => {
+                console.log(
+                    "Clerk user state changed:",
+                    user ? "signed in" : "signed out",
+                );
+                updateUserData();
+            });
+
+            // Initial check
+            updateUserData();
+        }
+
+        // Also set up a listener for when Clerk becomes ready
+        const unsubscribeClerk = clerkReady.subscribe((ready) => {
+            if (ready) {
+                console.log("Clerk is now ready, updating user data");
+                updateUserData();
+
+                // Set up the Clerk listener if it wasn't set up before
+                if (window.Clerk && !window.Clerk.__listenerAdded) {
+                    window.Clerk.addListener(({ user }) => {
+                        console.log(
+                            "Clerk user state changed (from ready listener)",
+                        );
+                        updateUserData();
+                    });
+                    window.Clerk.__listenerAdded = true;
+                }
+            }
+        });
+
+        return () => {
+            unsubscribeClerk();
+            // Remove Clerk listener if needed
+            if (window.Clerk && window.Clerk.removeAllListeners) {
+                window.Clerk.removeAllListeners();
+            }
+        };
     });
 
     const unsubscribe = selectedWorkspaceId.subscribe((value) => {
@@ -80,10 +143,14 @@
             window.location.href = `/workspaces/${localSelectedWorkspaceId}`; // Hard refresh
         }
     }
+
+    function goToProfile() {
+        goto("/profile");
+    }
 </script>
 
 <Navbar rounded={true} navContainerClass="nav-contain">
-    <div style="display: flex; flex-direction: row;">
+    <div style="display: flex; flex-direction: row; align-items: center;">
         <NavBrand href="/">
             <div class="file-pdf-outline-icon">
                 <FileImportSolid
@@ -115,9 +182,31 @@
                 </select>
             </div>
             <!-- Go to Workspace Button -->
-            <Button color="purple" size="sm" on:click={goToSelectedWorkspace}
+            <Button color="purple" size="md" on:click={goToSelectedWorkspace}
                 >!!</Button
             >
+        {/if}
+
+        <!-- Clerk Profile Picture -->
+        {#if isSignedIn && userProfileImage}
+            <div class="ml-4 cursor-pointer" on:click={goToProfile}>
+                <Avatar
+                    src={userProfileImage}
+                    alt="User profile"
+                    class="border-2 border-purple-500"
+                    rounded
+                />
+            </div>
+        {:else if isSignedIn}
+            <!-- Fallback if image is not available -->
+            <div class="ml-4 cursor-pointer" on:click={goToProfile}>
+                <Avatar
+                    initials={user?.firstName?.[0] || "U"}
+                    color="purple"
+                    class="border-2 border-purple-500"
+                    rounded
+                />
+            </div>
         {/if}
     </div>
 

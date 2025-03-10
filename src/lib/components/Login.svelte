@@ -102,6 +102,15 @@
             bind:value={password}
         />
     </div>
+    <div class="text-right">
+        <a
+            href="https://learning-starfish-18.accounts.dev"
+            target="_blank"
+            class="text-sm text-blue-600 hover:underline"
+        >
+            Forgot password?
+        </a>
+    </div>
 
     <Button type="submit" color="purple" disabled={isLoading}>
         {#if isLoading}

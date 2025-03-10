@@ -1,10 +1,12 @@
-<script>
+<script lang="ts">
     import { page } from "$app/stores";
     import {
         Sidebar,
         SidebarGroup,
         SidebarItem,
         SidebarWrapper,
+        Button,
+        Modal, // import Modal from flowbite
     } from "flowbite-svelte";
     import {
         BadgeCheckSolid,
@@ -25,28 +27,74 @@
         ClipboardListSolid,
     } from "flowbite-svelte-icons"; // Replace with your desired icons
     import { onMount } from "svelte";
+    import { clerkFrontendApi } from "$lib/stores/workspaceStore";
+    import { get } from "svelte/store";
+    import { afterUpdate } from "svelte";
+    import Login from "$lib/components/Login.svelte";
+    import Register from "$lib/components/Register.svelte";
+
     let spanClass = "flex-1 ms-3 whitespace-nowrap";
     $: activeUrl = `/${$page.url.pathname.split("/")[1]}`;
     $: activeUrl2 = `/${$page.url.pathname.split("/")[3]}`;
+
     onMount(() => {
         console.log(activeUrl);
         console.log(activeUrl2);
     });
+
+    let isSignedIn = false; // Default to signed out.
+    let showLoginModal = false;
+    let showRegisterModal = false;
+
+    afterUpdate(() => {
+        // Run this after every component update.  Could be inefficient, so improve if needed.
+        isSignedIn = get(clerkFrontendApi)?.session !== null;
+    });
+
+    function handleSuccessfulAuth() {
+        showLoginModal = false;
+        showRegisterModal = false;
+    }
 </script>
 
 <Sidebar {activeUrl} class="bg-gray-50">
     <SidebarWrapper>
-        <SidebarGroup>
-            <SidebarItem
-                href="/auth"
-                label="Sync With Cloud"
-                class="bg-gray-800 text-white hover:bg-gray-700 focus:ring-4 focus:ring-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+        {#if isSignedIn}
+            <SidebarGroup>
+                <SidebarItem
+                    href="/auth"
+                    label="Sync With Cloud"
+                    class="bg-gray-800 text-white hover:bg-gray-700 focus:ring-4 focus:ring-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                >
+                    <svelte:fragment slot="icon">
+                        <CloudArrowUpOutline class="w-6 h-6 text-white" />
+                    </svelte:fragment>
+                </SidebarItem>
+            </SidebarGroup>
+        {:else}
+            <Button color="purple" on:click={() => (showLoginModal = true)}
+                >Login</Button
             >
-                <svelte:fragment slot="icon">
-                    <CloudArrowUpOutline class="w-6 h-6 text-white" />
-                </svelte:fragment>
-            </SidebarItem>
-        </SidebarGroup>
+            <Button
+                color="alternative"
+                on:click={() => (showRegisterModal = true)}>Register</Button
+            >
+            <br />
+
+            <Modal bind:open={showLoginModal} title="Login">
+                <Login
+                    onCancel={() => (showLoginModal = false)}
+                    onSuccess={handleSuccessfulAuth}
+                />
+            </Modal>
+
+            <Modal bind:open={showRegisterModal} title="Register">
+                <Register
+                    onCancel={() => (showRegisterModal = false)}
+                    onSuccess={handleSuccessfulAuth}
+                />
+            </Modal>
+        {/if}
         <br />
         <div class="title">ANALOG</div>
         <SidebarGroup>
@@ -74,21 +122,21 @@
             <SidebarItem href="/schedule" label="Schedule">
                 <svelte:fragment slot="icon">
                     <ListOutline
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/expenses" label="Expenses">
                 <svelte:fragment slot="icon">
                     <DollarOutline
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/time-off" label="Time Off">
                 <svelte:fragment slot="icon">
                     <SunSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
@@ -99,21 +147,21 @@
             <SidebarItem href="/invoices" label="Invoices">
                 <svelte:fragment slot="icon">
                     <FileImportSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/analyzations" label="Analyzations">
                 <svelte:fragment slot="icon">
                     <ChartPieSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/ai-prompts" label="AI Prompts">
                 <svelte:fragment slot="icon">
                     <LightbulbSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
@@ -124,42 +172,42 @@
             <SidebarItem href="/workspaces" label="Workspaces">
                 <svelte:fragment slot="icon">
                     <BuildingSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/clients" label="Clients">
                 <svelte:fragment slot="icon">
                     <ProfileCardSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/projects" label="Projects">
                 <svelte:fragment slot="icon">
                     <ArrowRightOutline
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/team-members" label="Team Members">
                 <svelte:fragment slot="icon">
                     <UsersSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/approvals" label="Approvals">
                 <svelte:fragment slot="icon">
                     <BadgeCheckSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>
             <SidebarItem href="/tasks" label="Tasks">
                 <svelte:fragment slot="icon">
                     <ClipboardListSolid
-                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                        class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-white"
                     />
                 </svelte:fragment>
             </SidebarItem>

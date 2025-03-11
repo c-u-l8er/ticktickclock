@@ -14,11 +14,7 @@
             isLoading = true;
             error = null;
 
-            const taskId = parseInt($page.params.taskId);
-
-            if (isNaN(taskId)) {
-                throw new Error("Invalid task ID");
-            }
+            const taskId = $page.params.taskId;
 
             task = await db.tasks.get(taskId);
 

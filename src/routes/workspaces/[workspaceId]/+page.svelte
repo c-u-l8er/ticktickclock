@@ -12,8 +12,8 @@
     let editingWorkspace: Workspace;
 
     onMount(async () => {
-        workspaceId = parseInt($page.params.workspaceId);
-        console.log(workspaceId);
+        workspaceId = $page.params.workspaceId;
+        console.log("workspaceId", workspaceId);
         workspace = await db.workspaces.get(workspaceId);
         if (workspace) {
             editingWorkspace = { ...workspace }; // Initialize editingWorkspace with the current workspace data

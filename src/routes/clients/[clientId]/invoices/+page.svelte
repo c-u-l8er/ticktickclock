@@ -25,7 +25,7 @@
     let client: Client | null = null;
 
     onMount(async () => {
-        clientId = parseInt($page.params.clientId);
+        clientId = $page.params.clientId;
         client = await db.clients.get(clientId);
         await fetchInvoices();
     });

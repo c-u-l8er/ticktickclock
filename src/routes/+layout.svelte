@@ -8,9 +8,29 @@
     import SuperHeader from "$lib/components/SuperHeader.svelte";
     import "../app.css";
 
+    import { db } from "$lib/db";
+
     let mounted = false;
 
     onMount(async () => {
+        if (browser && db) {
+            try {
+                // Initialize the database
+                await db.waitForReady();
+
+                // Try to sync but handle errors gracefully
+                try {
+                    await db.safeSync();
+                } catch (error) {
+                    console.warn(
+                        "Initial sync failed, will retry later:",
+                        error,
+                    );
+                }
+            } catch (error) {
+                console.error("Error initializing Dexie Cloud:", error);
+            }
+        }
         if (browser) {
             console.log("🔄 Initializing Clerk...");
             const clerk = window.Clerk;

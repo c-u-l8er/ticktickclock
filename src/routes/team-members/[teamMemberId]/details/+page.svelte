@@ -14,7 +14,7 @@
             isLoading = true;
             error = null;
 
-            teamMemberId = parseInt($page.params.teamMemberId);
+            teamMemberId = $page.params.teamMemberId;
             teamMember = await db.teamMembers.get(teamMemberId);
 
             if (!teamMember) {

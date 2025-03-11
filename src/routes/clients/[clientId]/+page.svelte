@@ -11,7 +11,7 @@
     let activeTab: string = "details"; // Keep track of the active tab
 
     onMount(async () => {
-        clientId = parseInt($page.params.clientId);
+        clientId = $page.params.clientId;
         client = await db.clients.get(clientId);
 
         // Determine the active tab based on the URL

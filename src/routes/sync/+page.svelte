@@ -47,6 +47,9 @@
     let user: any = null;
     let isLoading = true;
     let errorMessage = "";
+    let syncState = {
+        inProgress: false,
+    };
 
     // Data
     let clerkOrganizations: any[] = [];
@@ -409,29 +412,79 @@
     // Full sync function
     async function syncAll() {
         try {
+            syncState.inProgress = true;
             addLog("Starting full sync...", "info");
+
+            // Try to perform a cloud sync
+            if (db && db.cloud) {
+                try {
+                    const syncResult = await db.safeSync();
+                    if (syncResult && syncResult.error) {
+                        addLog(
+                            `Sync encountered an error: ${syncResult.error.message || "Unknown error"}`,
+                            "warning",
+                        );
+                    } else {
+                        addLog(
+                            "Database sync completed successfully",
+                            "success",
+                        );
+                    }
+                } catch (error) {
+                    addLog(
+                        `Cloud sync failed: ${error.message || "Unknown error"}`,
+                        "error",
+                    );
+                }
+            } else {
+                addLog("Cloud sync is not available", "warning");
+            }
 
             // Create workspaces for unlinked organizations
             const unlinkedOrgs = getUnlinkedOrganizations();
             for (const org of unlinkedOrgs) {
-                await createWorkspaceFromOrg(org);
+                try {
+                    await createWorkspaceFromOrg(org);
+                } catch (error) {
+                    addLog(
+                        `Failed to create workspace for org ${org.name}: ${error.message}`,
+                        "error",
+                    );
+                }
             }
 
             // After creating workspaces, try to import team members
             // for each workspace that's linked to an organization
             for (const workspace of localWorkspaces) {
                 if (workspace.clerkOrganizationId) {
-                    await createTeamMembersFromUsers(workspace.id);
+                    try {
+                        await createTeamMembersFromUsers(workspace.id);
+                    } catch (error) {
+                        addLog(
+                            `Failed to import team members for workspace ${workspace.name}: ${error.message}`,
+                            "error",
+                        );
+                    }
                 }
             }
 
-            const updatedWorkspaces = await db.workspaces.toArray();
-            workspacesStore.set(updatedWorkspaces);
+            // Try to update the workspaces store
+            try {
+                const updatedWorkspaces = await db.workspaces.toArray();
+                workspacesStore.set(updatedWorkspaces);
+            } catch (error) {
+                addLog(
+                    `Failed to refresh workspace list: ${error.message}`,
+                    "warning",
+                );
+            }
 
-            addLog("Full sync completed successfully", "success");
+            addLog("Full sync process completed", "success");
         } catch (error) {
             console.error("Error during full sync:", error);
             addLog(`Full sync failed: ${error.message}`, "error");
+        } finally {
+            syncState.inProgress = false;
         }
     }
 

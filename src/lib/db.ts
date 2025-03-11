@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import dexieCloud from "dexie-cloud-addon";
 
 export interface Workspace {
   id?: number;
@@ -102,22 +103,32 @@ export class TickTickClockDB extends Dexie {
   private initializationPromise: Promise<boolean> | null = null;
 
   constructor() {
-    super("TickTickClockDB");
+    super("TickTickClockDB", { addons: [dexieCloud] });
     this.version(8).stores({
       //Increment version number!
-      workspaces: "++id, name, rate, clerkOrganizationId",
-      clients: "++id, workspaceId, name, rate, contactDetails",
-      projects: "++id, workspaceId, name, description, clientId, rate",
-      teamMembers: "++id, workspaceId, name, billableRate, costRate, role",
+      workspaces: "@id, name, rate, clerkOrganizationId",
+      clients: "@id, workspaceId, name, rate, contactDetails",
+      projects: "@id, workspaceId, name, description, clientId, rate",
+      teamMembers: "@id, workspaceId, name, billableRate, costRate, role",
       tasks:
-        "++id, workspaceId, projectId, clientId, name, description, rate, teamMemberId, status", // Define index for tasks
+        "@id, workspaceId, projectId, clientId, name, description, rate, teamMemberId, status", // Define index for tasks
       timeEntries:
-        "++id, workspaceId, clientId, projectId, taskId, teamMemberId, startTime, endTime, description",
+        "@id, workspaceId, clientId, projectId, taskId, teamMemberId, startTime, endTime, description",
       invoices:
-        "++id, workspaceId, clientId, projectId, invoiceNumber, date, totalAmount, lineItems",
-      projectTeamMembers: "++id, projectId, teamMemberId",
-      taskTeamMembers: "++id, taskId, teamMemberId",
+        "@id, workspaceId, clientId, projectId, invoiceNumber, date, totalAmount, lineItems",
+      projectTeamMembers: "@id, projectId, teamMemberId",
+      taskTeamMembers: "@id, taskId, teamMemberId",
     });
+
+    // Configure cloud sync with error handling
+    try {
+      this.cloud.configure({
+        databaseUrl: "https://zvkh7c4gj.dexie.cloud",
+        tryUseServiceWorker: false, // Disable service worker to see if it helps
+      });
+    } catch (error) {
+      console.warn("Failed to configure Dexie Cloud:", error);
+    }
   }
 
   static getInstance(): TickTickClockDB {
@@ -157,8 +168,25 @@ export class TickTickClockDB extends Dexie {
     }
     return false;
   }
+
+  // Add a safe sync method that handles errors
+  async safeSync() {
+    try {
+      if (this.cloud) {
+        console.log("Starting cloud sync...");
+        const syncResult = await this.cloud.sync();
+        console.log("Cloud sync completed:", syncResult);
+        return syncResult;
+      } else {
+        console.warn("Cloud addon not available");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error during cloud sync:", error);
+      return { error };
+    }
+  }
 }
 // Only create the database instance in the browser
-const db = typeof window !== "undefined" ? new TickTickClockDB() : null;
-
-export { db };
+export const db =
+  typeof window !== "undefined" ? TickTickClockDB.getInstance() : null;

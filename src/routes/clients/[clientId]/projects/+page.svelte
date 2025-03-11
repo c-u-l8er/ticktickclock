@@ -40,7 +40,7 @@
     let client: Client | null = null;
 
     onMount(async () => {
-        clientId = parseInt($page.params.clientId);
+        clientId = $page.params.clientId;
         client = await db.clients.get(clientId);
         await fetchProjects();
     });
@@ -54,7 +54,7 @@
         projects = await db.projects
             .where("workspaceId")
             .equals(workspaceId)
-            .and((item) => item.clientId === parseInt($page.params.clientId))
+            .and((item) => item.clientId === $page.params.clientId)
             .toArray();
     }
 
@@ -68,7 +68,7 @@
         const projectToAdd = {
             ...newProject,
             workspaceId: workspaceId,
-            clientId: parseInt($page.params.clientId),
+            clientId: $page.params.clientId,
         };
 
         await db.projects.add(projectToAdd);
@@ -76,7 +76,7 @@
             workspaceId: workspaceId,
             name: "",
             description: "",
-            clientId: parseInt($page.params.clientId),
+            clientId: $page.params.clientId,
             rate: 0,
         };
         await fetchProjects();

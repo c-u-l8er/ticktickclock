@@ -31,12 +31,8 @@
             isLoading = true;
             error = null;
 
-            clientId = parseInt($page.params.clientId);
-            projectId = parseInt($page.params.projectId);
-
-            if (isNaN(clientId) || isNaN(projectId)) {
-                throw new Error("Invalid client or project ID");
-            }
+            clientId = $page.params.clientId;
+            projectId = $page.params.projectId;
 
             const [loadedProject, loadedClient, loadedTasks] =
                 await Promise.all([

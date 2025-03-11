@@ -30,6 +30,7 @@
         ExclamationCircleSolid,
         CheckCircleSolid,
         CloudArrowUpSolid,
+        UserSettingsSolid,
     } from "flowbite-svelte-icons";
 
     // States
@@ -41,8 +42,10 @@
 
     // Data
     let clerkOrganizations: any[] = [];
+    let clerkMemberships: any[] = [];
     let localWorkspaces: Workspace[] = [];
     let localTeamMembers: TeamMember[] = [];
+    let clerkUsers: any[] = [];
 
     // Activity log
     let syncLogs: { message: string; timestamp: Date; type: string }[] = [];
@@ -95,44 +98,88 @@
             // Load Clerk organizations
             const clerk = window.Clerk;
 
-            // Handle both free and team plans
-            if (clerk.organization) {
-                console.log("co", clerk.organization);
-                try {
-                    clerkOrganizations =
-                        await clerk.organization.getOrganizationList();
-                } catch (error) {
-                    console.warn(
-                        "Error getting organizations list, likely using free plan:",
-                        error,
-                    );
-                    // Create a personal organization for free plans
-                    clerkOrganizations = [
-                        {
-                            id: "personal",
-                            name: "Personal Workspace",
-                            slug: "personal",
-                            createdAt: new Date().toISOString(),
-                        },
-                    ];
-                    addLog(
-                        "Using personal workspace mode (Clerk Free plan)",
-                        "info",
-                    );
+            // Get organization memberships instead of just organizations
+            try {
+                if (clerk.user) {
+                    // Get the user's organization memberships
+                    clerkMemberships =
+                        await clerk.user.getOrganizationMemberships();
+
+                    if (clerkMemberships && clerkMemberships.length > 0) {
+                        // Extract organizations from memberships
+                        clerkOrganizations = clerkMemberships.map(
+                            (membership) => ({
+                                id: membership.organization.id,
+                                name: membership.organization.name,
+                                slug: membership.organization.slug,
+                                createdAt: membership.organization.createdAt,
+                                role: membership.role, // Include the user's role in each organization
+                            }),
+                        );
+
+                        addLog(
+                            `Found ${clerkOrganizations.length} organizations you're a member of`,
+                            "success",
+                        );
+                    } else {
+                        // Fallback for when the user isn't a member of any organizations
+                        clerkOrganizations = [
+                            {
+                                id: "personal",
+                                name: "Personal Workspace",
+                                slug: "personal",
+                                createdAt: new Date().toISOString(),
+                                role: "admin",
+                            },
+                        ];
+                        addLog(
+                            "Using personal workspace (no organizations found)",
+                            "info",
+                        );
+                    }
                 }
-            } else {
-                console.log("co", clerk);
-                // Fallback for free plans
+
+                // If available, get all users from the first organization the user is a member of
+                if (clerkMemberships && clerkMemberships.length > 0) {
+                    const firstOrg = clerkMemberships[0].organization;
+                    try {
+                        const members = await firstOrg.getMemberships();
+                        clerkUsers = members.map((membership) => ({
+                            id: membership.publicUserData.userId,
+                            firstName: membership.publicUserData.firstName,
+                            lastName: membership.publicUserData.lastName,
+                            fullName:
+                                `${membership.publicUserData.firstName || ""} ${membership.publicUserData.lastName || ""}`.trim(),
+                            email: membership.publicUserData.identifier,
+                            role: membership.role,
+                        }));
+                        addLog(
+                            `Found ${clerkUsers.length} members in organization "${firstOrg.name}"`,
+                            "success",
+                        );
+                    } catch (error) {
+                        console.warn(
+                            "Error fetching organization members:",
+                            error,
+                        );
+                        clerkUsers = []; // Empty array if we can't get members
+                    }
+                }
+            } catch (error) {
+                console.warn("Error getting organization memberships:", error);
+                // Fallback for errors or free plans
                 clerkOrganizations = [
                     {
                         id: "personal",
                         name: "Personal Workspace",
                         slug: "personal",
                         createdAt: new Date().toISOString(),
+                        role: "admin",
                     },
                 ];
+                clerkUsers = []; // Empty array if we can't get users
                 addLog(
-                    "Using personal workspace mode (Clerk Free plan)",
+                    "Using personal workspace mode (could not fetch organizations)",
                     "info",
                 );
             }
@@ -265,6 +312,67 @@
         }
     }
 
+    // Function to create team members from Clerk users
+    async function createTeamMembersFromUsers(workspaceId) {
+        try {
+            if (!workspaceId) {
+                addLog(
+                    "No workspace selected for team member import",
+                    "warning",
+                );
+                return;
+            }
+
+            const workspace = getWorkspaceById(workspaceId);
+            if (!workspace) {
+                addLog("Could not find selected workspace", "error");
+                return;
+            }
+
+            addLog(
+                `Importing team members for workspace "${workspace.name}"...`,
+                "info",
+            );
+
+            // Get existing team member names for this workspace
+            const existingNames = getTeamMembersForWorkspace(workspaceId).map(
+                (m) => m.name.toLowerCase(),
+            );
+
+            // Filter users that don't already exist as team members
+            const usersToImport = clerkUsers.filter(
+                (user) => !existingNames.includes(user.fullName.toLowerCase()),
+            );
+
+            if (usersToImport.length === 0) {
+                addLog("No new users to import as team members", "info");
+                return;
+            }
+
+            // Create team members for each user
+            for (const user of usersToImport) {
+                await db.teamMembers.add({
+                    workspaceId,
+                    name: user.fullName,
+                    billableRate: 0,
+                    costRate: 0,
+                    role: user.role === "admin" ? "admin" : "team manager", // Map Clerk roles to our roles
+                });
+            }
+
+            addLog(
+                `Imported ${usersToImport.length} team members successfully`,
+                "success",
+            );
+
+            // Reload data
+            await loadData();
+        } catch (error) {
+            console.error("Error creating team members:", error);
+            addLog(`Failed to create team members: ${error.message}`, "error");
+        }
+    }
+
     // Activity log
     function addLog(message, type = "info") {
         syncLogs = [
@@ -288,10 +396,58 @@
                 await createWorkspaceFromOrg(org);
             }
 
+            // After creating workspaces, try to import team members
+            // for each workspace that's linked to an organization
+            for (const workspace of localWorkspaces) {
+                if (workspace.clerkOrganizationId) {
+                    await createTeamMembersFromUsers(workspace.id);
+                }
+            }
+
             addLog("Full sync completed successfully", "success");
         } catch (error) {
             console.error("Error during full sync:", error);
             addLog(`Full sync failed: ${error.message}`, "error");
+        }
+    }
+
+    // Open Clerk's organization management UI
+    function openClerkOrgManager() {
+        if (window.Clerk) {
+            window.Clerk.openOrganizationProfile({
+                appearance: {
+                    elements: {
+                        organizationProfilePage: {
+                            showDangerSection: true,
+                        },
+                    },
+                },
+            });
+        }
+    }
+
+    // Open Clerk's user management UI
+    function openClerkUserManager() {
+        if (
+            window.Clerk &&
+            clerkOrganizations.length > 0 &&
+            clerkOrganizations[0].id !== "personal"
+        ) {
+            // Only works with actual organizations, not the personal one
+            window.Clerk.openOrganizationProfile({
+                appearance: {
+                    elements: {
+                        organizationProfilePage: {
+                            initialTab: "members",
+                        },
+                    },
+                },
+            });
+        } else {
+            addLog(
+                "Organization management is only available with Clerk Teams plan",
+                "warning",
+            );
         }
     }
 </script>
@@ -345,12 +501,19 @@
                             ).length} of {localWorkspaces.length} workspaces synced
                             with cloud
                         </p>
+                        <p class="text-gray-600 text-sm mt-1">
+                            {localTeamMembers.length} team members available locally
+                        </p>
                     </div>
                 </div>
-                <div>
+                <div class="flex flex-col sm:flex-row gap-2">
                     <Button color="purple" on:click={syncAll}>
                         <CloudArrowUpSolid class="w-5 h-5 mr-2" />
                         Sync All
+                    </Button>
+                    <Button color="alternative" on:click={openClerkOrgManager}>
+                        <UserSettingsSolid class="w-5 h-5 mr-2" />
+                        Manage Organizations
                     </Button>
                 </div>
             </div>
@@ -358,10 +521,19 @@
 
         <!-- Cloud Organizations -->
         <Card padding="xl" class="mb-6" size="xl">
-            <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <BuildingSolid class="w-5 h-5 mr-2" />
-                Cloud Organizations
-            </h3>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <BuildingSolid class="w-5 h-5 mr-2" />
+                    Cloud Organizations
+                </h3>
+                <Button
+                    size="sm"
+                    color="alternative"
+                    on:click={openClerkOrgManager}
+                >
+                    Manage in Clerk
+                </Button>
+            </div>
 
             {#if clerkOrganizations.length === 0}
                 <div class="bg-gray-50 p-4 rounded-lg text-center">
@@ -371,6 +543,7 @@
                 <Table hoverable={true}>
                     <TableHead>
                         <TableHeadCell>Organization</TableHeadCell>
+                        <TableHeadCell>Role</TableHeadCell>
                         <TableHeadCell>Status</TableHeadCell>
                         <TableHeadCell>Actions</TableHeadCell>
                     </TableHead>
@@ -384,6 +557,11 @@
                                             ID: {org.id}
                                         </p>
                                     </div>
+                                </TableBodyCell>
+                                <TableBodyCell>
+                                    <Badge color="purple"
+                                        >{org.role || "member"}</Badge
+                                    >
                                 </TableBodyCell>
                                 <TableBodyCell>
                                     {#if localWorkspaces.some((w) => w.clerkOrganizationId === org.id)}
@@ -441,6 +619,7 @@
                     <TableHead>
                         <TableHeadCell>Workspace</TableHeadCell>
                         <TableHeadCell>Status</TableHeadCell>
+                        <TableHeadCell>Team Members</TableHeadCell>
                         <TableHeadCell>Actions</TableHeadCell>
                     </TableHead>
                     <TableBody>
@@ -450,11 +629,6 @@
                                     <div>
                                         <p class="font-medium">
                                             {workspace.name}
-                                        </p>
-                                        <p class="text-xs text-gray-500">
-                                            {getTeamMembersForWorkspace(
-                                                workspace.id,
-                                            ).length} team members
                                         </p>
                                     </div>
                                 </TableBodyCell>
@@ -470,18 +644,37 @@
                                     {/if}
                                 </TableBodyCell>
                                 <TableBodyCell>
+                                    {getTeamMembersForWorkspace(workspace.id)
+                                        .length} members
+                                </TableBodyCell>
+                                <TableBodyCell>
                                     {#if isWorkspaceSynced(workspace)}
-                                        <Button
-                                            size="xs"
-                                            color="red"
-                                            on:click={() =>
-                                                unlinkWorkspace(workspace)}
-                                        >
-                                            <TrashBinSolid
-                                                class="w-3 h-3 mr-1"
-                                            />
-                                            Unlink
-                                        </Button>
+                                        <div class="flex space-x-1">
+                                            <Button
+                                                size="xs"
+                                                color="purple"
+                                                on:click={() =>
+                                                    createTeamMembersFromUsers(
+                                                        workspace.id,
+                                                    )}
+                                            >
+                                                <UsersSolid
+                                                    class="w-3 h-3 mr-1"
+                                                />
+                                                Import Members
+                                            </Button>
+                                            <Button
+                                                size="xs"
+                                                color="red"
+                                                on:click={() =>
+                                                    unlinkWorkspace(workspace)}
+                                            >
+                                                <TrashBinSolid
+                                                    class="w-3 h-3 mr-1"
+                                                />
+                                                Unlink
+                                            </Button>
+                                        </div>
                                     {:else if getUnlinkedOrganizations().length > 0}
                                         <div class="flex space-x-1">
                                             {#each getUnlinkedOrganizations() as org}
@@ -514,6 +707,98 @@
             {/if}
         </Card>
 
+        <!-- Team Members Section -->
+        <Card padding="xl" class="mb-6" size="xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <UsersSolid class="w-5 h-5 mr-2" />
+                    Team Members
+                </h3>
+                <Button
+                    size="sm"
+                    color="alternative"
+                    on:click={openClerkUserManager}
+                >
+                    Manage in Clerk
+                </Button>
+            </div>
+
+            <!-- Section for Clerk users -->
+            <Accordion class="mb-4">
+                <AccordionItem>
+                    <span slot="header" class="font-semibold">
+                        Clerk Users ({clerkUsers.length})
+                    </span>
+                    {#if clerkUsers.length === 0}
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <p>No Clerk users found</p>
+                        </div>
+                    {:else}
+                        <Table>
+                            <TableHead>
+                                <TableHeadCell>Name</TableHeadCell>
+                                <TableHeadCell>Email</TableHeadCell>
+                                <TableHeadCell>Role</TableHeadCell>
+                            </TableHead>
+                            <TableBody>
+                                {#each clerkUsers as user}
+                                    <TableBodyRow>
+                                        <TableBodyCell
+                                            >{user.fullName}</TableBodyCell
+                                        >
+                                        <TableBodyCell
+                                            >{user.email}</TableBodyCell
+                                        >
+                                        <TableBodyCell>
+                                            <Badge color="purple"
+                                                >{user.role}</Badge
+                                            >
+                                        </TableBodyCell>
+                                    </TableBodyRow>
+                                {/each}
+                            </TableBody>
+                        </Table>
+                    {/if}
+                </AccordionItem>
+            </Accordion>
+
+            <!-- Section for local team members -->
+            <h4 class="font-medium mb-2">Local Team Members</h4>
+            {#if localTeamMembers.length === 0}
+                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                    <p>No team members found locally</p>
+                </div>
+            {:else}
+                <Table>
+                    <TableHead>
+                        <TableHeadCell>Name</TableHeadCell>
+                        <TableHeadCell>Workspace</TableHeadCell>
+                        <TableHeadCell>Role</TableHeadCell>
+                    </TableHead>
+                    <TableBody>
+                        {#each localTeamMembers as member}
+                            <TableBodyRow>
+                                <TableBodyCell>{member.name}</TableBodyCell>
+                                <TableBodyCell>
+                                    {getWorkspaceById(member.workspaceId)
+                                        ?.name || "Unknown"}
+                                </TableBodyCell>
+                                <TableBodyCell>
+                                    <Badge
+                                        color={member.role === "admin"
+                                            ? "red"
+                                            : "blue"}
+                                    >
+                                        {member.role}
+                                    </Badge>
+                                </TableBodyCell>
+                            </TableBodyRow>
+                        {/each}
+                    </TableBody>
+                </Table>
+            {/if}
+        </Card>
+
         <!-- Activity Log -->
         <Card padding="xl" size="xl">
             <div class="flex justify-between items-center mb-4">
@@ -538,9 +823,9 @@
                         <TableBody>
                             {#each syncLogs as log}
                                 <TableBodyRow>
-                                    <TableBodyCell
-                                        >{log.timestamp.toLocaleTimeString()}</TableBodyCell
-                                    >
+                                    <TableBodyCell>
+                                        {log.timestamp.toLocaleTimeString()}
+                                    </TableBodyCell>
                                     <TableBodyCell>{log.message}</TableBodyCell>
                                     <TableBodyCell>
                                         {#if log.type === "success"}
@@ -583,29 +868,30 @@
                             Link existing local workspaces to Clerk
                             organizations
                         </li>
+                        <li>Import organization members as team members</li>
                         <li>
                             Unlink workspaces when you no longer want them
                             connected
                         </li>
                     </ul>
 
-                    <h4 class="font-medium mt-4">Sync Actions</h4>
+                    <h4 class="font-medium mt-4">Clerk Integration Features</h4>
                     <ul class="list-disc pl-5 space-y-1">
                         <li>
-                            <strong>Import:</strong> Create a new local workspace
-                            from a Clerk organization
+                            <strong>Organizations:</strong> Each Clerk organization
+                            can be imported as a workspace
                         </li>
                         <li>
-                            <strong>Link:</strong> Connect an existing local workspace
-                            to a Clerk organization
+                            <strong>Members:</strong> Organization members can be
+                            imported as team members
                         </li>
                         <li>
-                            <strong>Unlink:</strong> Disconnect a workspace from
-                            its Clerk organization
+                            <strong>Roles:</strong> Administrative roles in Clerk
+                            map to roles in TickTickClock
                         </li>
                         <li>
-                            <strong>Sync All:</strong> Automatically import all unlinked
-                            organizations
+                            <strong>Management:</strong> Use the "Manage" buttons
+                            to open Clerk's UI for managing organizations and members
                         </li>
                     </ul>
                 </div>

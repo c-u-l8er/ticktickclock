@@ -1,6 +1,14 @@
 <script lang="ts">
+    import { dev } from "$app/environment";
+
+    // Set base URLs according to environment
+    const clerkBaseUrl = dev
+        ? "https://learning-starfish-18.accounts.dev"
+        : "https://accounts.ticktickclock.com";
+
     import { onMount } from "svelte";
     import { clerkReady } from "$lib/stores/workspaceStore";
+    import { workspaces as workspacesStore } from "$lib/stores/workspaceStore";
     import { db, type Workspace, type TeamMember } from "$lib/db";
     import {
         Spinner,
@@ -188,6 +196,11 @@
             localWorkspaces = await db.workspaces.toArray();
             localTeamMembers = await db.teamMembers.toArray();
 
+            // After loading data, update the workspaces store
+            if (localWorkspaces.length > 0) {
+                workspacesStore.set(localWorkspaces);
+            }
+
             addLog("Data loaded successfully", "success");
         } catch (error) {
             console.error("Error loading data:", error);
@@ -258,6 +271,10 @@
 
             // Reload data
             await loadData();
+
+            // Explicitly update the workspaces store
+            const updatedWorkspaces = await db.workspaces.toArray();
+            workspacesStore.set(updatedWorkspaces);
         } catch (error) {
             console.error("Error creating workspace:", error);
             addLog(`Failed to create workspace: ${error.message}`, "error");
@@ -282,6 +299,8 @@
 
             // Reload data
             await loadData();
+            const updatedWorkspaces = await db.workspaces.toArray();
+            workspacesStore.set(updatedWorkspaces);
         } catch (error) {
             console.error("Error linking workspace:", error);
             addLog(`Failed to link workspace: ${error.message}`, "error");
@@ -306,6 +325,8 @@
 
             // Reload data
             await loadData();
+            const updatedWorkspaces = await db.workspaces.toArray();
+            workspacesStore.set(updatedWorkspaces);
         } catch (error) {
             console.error("Error unlinking workspace:", error);
             addLog(`Failed to unlink workspace: ${error.message}`, "error");
@@ -404,6 +425,9 @@
                 }
             }
 
+            const updatedWorkspaces = await db.workspaces.toArray();
+            workspacesStore.set(updatedWorkspaces);
+
             addLog("Full sync completed successfully", "success");
         } catch (error) {
             console.error("Error during full sync:", error);
@@ -411,48 +435,24 @@
         }
     }
 
-    // Open Clerk's organization management UI
+    // Update the functions that open Clerk UI to use dynamic URLs
     function openClerkOrgManager() {
-        if (window.Clerk) {
-            window.Clerk.openOrganizationProfile({
-                appearance: {
-                    elements: {
-                        organizationProfilePage: {
-                            showDangerSection: true,
-                        },
-                    },
-                },
-            });
-        }
+        // Redirect to the Clerk organizations page based on environment
+        window.location.href = `${clerkBaseUrl}/organization`;
     }
 
-    // Open Clerk's user management UI
     function openClerkUserManager() {
-        if (
-            window.Clerk &&
-            clerkOrganizations.length > 0 &&
-            clerkOrganizations[0].id !== "personal"
-        ) {
-            // Only works with actual organizations, not the personal one
-            window.Clerk.openOrganizationProfile({
-                appearance: {
-                    elements: {
-                        organizationProfilePage: {
-                            initialTab: "members",
-                        },
-                    },
-                },
-            });
-        } else {
-            addLog(
-                "Organization management is only available with Clerk Teams plan",
-                "warning",
-            );
-        }
+        // Redirect to the Clerk organization members page based on environment
+        window.location.href = `${clerkBaseUrl}/organization/organization-members`;
+    }
+
+    // New function to create organization with dynamic URL
+    function createClerkOrganization() {
+        window.location.href = `${clerkBaseUrl}/create-organization`;
     }
 </script>
 
-<div class="p-4" style="width: 1000px; margin: 0 auto;">
+<div class="p-4 w-full">
     <Heading tag="h1" class="flex items-center mb-6">
         <ArrowUpDownOutline class="w-6 h-6 mr-2" />
         Cloud Sync
@@ -486,416 +486,542 @@
             <Button class="mt-2" on:click={loadData}>Try Again</Button>
         </Alert>
     {:else}
-        <!-- Sync status card -->
-        <Card padding="xl" class="mb-6" size="xl">
-            <div class="flex flex-col md:flex-row items-center justify-between">
-                <div class="flex items-center mb-4 md:mb-0">
-                    <div class="p-2 bg-purple-100 rounded-full mr-4">
-                        <CloudArrowUpOutline class="text-purple-700 w-8 h-8" />
+        <!-- Two-column layout with main content and help sidebar -->
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Main content column (left) -->
+            <div class="w-full lg:w-2/3">
+                <!-- Sync status card -->
+                <Card padding="xl" class="mb-6" size="none">
+                    <div
+                        class="flex flex-col md:flex-row items-center justify-between"
+                    >
+                        <div class="flex items-center mb-4 md:mb-0">
+                            <div class="p-2 bg-purple-100 rounded-full mr-4">
+                                <CloudArrowUpOutline
+                                    class="text-purple-700 w-8 h-8"
+                                />
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold">
+                                    Cloud Sync Status
+                                </h3>
+                                <p class="text-gray-600">
+                                    {localWorkspaces.filter(
+                                        (w) => w.clerkOrganizationId,
+                                    ).length} of {localWorkspaces.length} workspaces
+                                    synced with cloud
+                                </p>
+                                <p class="text-gray-600 text-sm mt-1">
+                                    {localTeamMembers.length} team members available
+                                    locally
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <Button color="purple" on:click={syncAll}>
+                                <CloudArrowUpSolid class="w-5 h-5 mr-2" />
+                                Sync All
+                            </Button>
+                            <Button
+                                color="alternative"
+                                on:click={openClerkOrgManager}
+                            >
+                                <UserSettingsSolid class="w-5 h-5 mr-2" />
+                                Organizations Portal
+                            </Button>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">Cloud Sync Status</h3>
-                        <p class="text-gray-600">
-                            {localWorkspaces.filter(
-                                (w) => w.clerkOrganizationId,
-                            ).length} of {localWorkspaces.length} workspaces synced
-                            with cloud
-                        </p>
-                        <p class="text-gray-600 text-sm mt-1">
-                            {localTeamMembers.length} team members available locally
-                        </p>
+                </Card>
+
+                <!-- Cloud Organizations -->
+                <Card padding="xl" class="mb-6" size="none">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold flex items-center">
+                            <BuildingSolid class="w-5 h-5 mr-2" />
+                            Cloud Organizations
+                        </h3>
+                        <div class="flex gap-2">
+                            <Button
+                                size="sm"
+                                color="alternative"
+                                on:click={openClerkOrgManager}
+                            >
+                                Manage Organizations
+                            </Button>
+                            <Button
+                                size="sm"
+                                color="purple"
+                                on:click={createClerkOrganization}
+                            >
+                                Create Organization
+                            </Button>
+                        </div>
                     </div>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <Button color="purple" on:click={syncAll}>
-                        <CloudArrowUpSolid class="w-5 h-5 mr-2" />
-                        Sync All
-                    </Button>
-                    <Button color="alternative" on:click={openClerkOrgManager}>
-                        <UserSettingsSolid class="w-5 h-5 mr-2" />
-                        Manage Organizations
-                    </Button>
-                </div>
-            </div>
-        </Card>
 
-        <!-- Cloud Organizations -->
-        <Card padding="xl" class="mb-6" size="xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold flex items-center">
-                    <BuildingSolid class="w-5 h-5 mr-2" />
-                    Cloud Organizations
-                </h3>
-                <Button
-                    size="sm"
-                    color="alternative"
-                    on:click={openClerkOrgManager}
-                >
-                    Manage in Clerk
-                </Button>
-            </div>
-
-            {#if clerkOrganizations.length === 0}
-                <div class="bg-gray-50 p-4 rounded-lg text-center">
-                    <p>No organizations found in your Clerk account</p>
-                </div>
-            {:else}
-                <Table hoverable={true}>
-                    <TableHead>
-                        <TableHeadCell>Organization</TableHeadCell>
-                        <TableHeadCell>Role</TableHeadCell>
-                        <TableHeadCell>Status</TableHeadCell>
-                        <TableHeadCell>Actions</TableHeadCell>
-                    </TableHead>
-                    <TableBody>
-                        {#each clerkOrganizations as org}
-                            <TableBodyRow>
-                                <TableBodyCell>
-                                    <div>
-                                        <p class="font-medium">{org.name}</p>
-                                        <p class="text-xs text-gray-500">
-                                            ID: {org.id}
-                                        </p>
-                                    </div>
-                                </TableBodyCell>
-                                <TableBodyCell>
-                                    <Badge color="purple"
-                                        >{org.role || "member"}</Badge
-                                    >
-                                </TableBodyCell>
-                                <TableBodyCell>
-                                    {#if localWorkspaces.some((w) => w.clerkOrganizationId === org.id)}
-                                        <Badge color="green">Synced</Badge>
-                                    {:else}
-                                        <Badge color="gray">Not Synced</Badge>
-                                    {/if}
-                                </TableBodyCell>
-                                <TableBodyCell>
-                                    {#if !localWorkspaces.some((w) => w.clerkOrganizationId === org.id)}
-                                        <Button
-                                            size="xs"
-                                            color="purple"
-                                            on:click={() =>
-                                                createWorkspaceFromOrg(org)}
-                                        >
-                                            <ArrowDownOutline
-                                                class="w-3 h-3 mr-1"
-                                            />
-                                            Import
-                                        </Button>
-                                    {:else}
-                                        <Button
-                                            size="xs"
-                                            color="alternative"
-                                            disabled
-                                        >
-                                            <CheckCircleSolid
-                                                class="w-3 h-3 mr-1"
-                                            />
-                                            Imported
-                                        </Button>
-                                    {/if}
-                                </TableBodyCell>
-                            </TableBodyRow>
-                        {/each}
-                    </TableBody>
-                </Table>
-            {/if}
-        </Card>
-
-        <!-- Local Workspaces -->
-        <Card padding="xl" class="mb-6" size="xl">
-            <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <BuildingSolid class="w-5 h-5 mr-2" />
-                Local Workspaces
-            </h3>
-
-            {#if localWorkspaces.length === 0}
-                <div class="bg-gray-50 p-4 rounded-lg text-center">
-                    <p>No workspaces found in your local database</p>
-                </div>
-            {:else}
-                <Table hoverable={true}>
-                    <TableHead>
-                        <TableHeadCell>Workspace</TableHeadCell>
-                        <TableHeadCell>Status</TableHeadCell>
-                        <TableHeadCell>Team Members</TableHeadCell>
-                        <TableHeadCell>Actions</TableHeadCell>
-                    </TableHead>
-                    <TableBody>
-                        {#each localWorkspaces as workspace}
-                            <TableBodyRow>
-                                <TableBodyCell>
-                                    <div>
-                                        <p class="font-medium">
-                                            {workspace.name}
-                                        </p>
-                                    </div>
-                                </TableBodyCell>
-                                <TableBodyCell>
-                                    {#if isWorkspaceSynced(workspace)}
-                                        <Badge color="green">
-                                            Synced with "{getLinkedOrganization(
-                                                workspace,
-                                            )?.name || "Unknown"}"
-                                        </Badge>
-                                    {:else}
-                                        <Badge color="gray">Not Synced</Badge>
-                                    {/if}
-                                </TableBodyCell>
-                                <TableBodyCell>
-                                    {getTeamMembersForWorkspace(workspace.id)
-                                        .length} members
-                                </TableBodyCell>
-                                <TableBodyCell>
-                                    {#if isWorkspaceSynced(workspace)}
-                                        <div class="flex space-x-1">
-                                            <Button
-                                                size="xs"
-                                                color="purple"
-                                                on:click={() =>
-                                                    createTeamMembersFromUsers(
-                                                        workspace.id,
-                                                    )}
+                    {#if clerkOrganizations.length === 0}
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <p>No organizations found in your Clerk account</p>
+                        </div>
+                    {:else}
+                        <Table hoverable={true}>
+                            <TableHead>
+                                <TableHeadCell>Organization</TableHeadCell>
+                                <TableHeadCell>Role</TableHeadCell>
+                                <TableHeadCell>Status</TableHeadCell>
+                                <TableHeadCell>Actions</TableHeadCell>
+                            </TableHead>
+                            <TableBody>
+                                {#each clerkOrganizations as org}
+                                    <TableBodyRow>
+                                        <TableBodyCell>
+                                            <div>
+                                                <p class="font-medium">
+                                                    {org.name}
+                                                </p>
+                                                <p
+                                                    class="text-xs text-gray-500"
+                                                >
+                                                    ID: {org.id}
+                                                </p>
+                                            </div>
+                                        </TableBodyCell>
+                                        <TableBodyCell>
+                                            <Badge color="purple"
+                                                >{org.role || "member"}</Badge
                                             >
-                                                <UsersSolid
-                                                    class="w-3 h-3 mr-1"
-                                                />
-                                                Import Members
-                                            </Button>
-                                            <Button
-                                                size="xs"
-                                                color="red"
-                                                on:click={() =>
-                                                    unlinkWorkspace(workspace)}
-                                            >
-                                                <TrashBinSolid
-                                                    class="w-3 h-3 mr-1"
-                                                />
-                                                Unlink
-                                            </Button>
-                                        </div>
-                                    {:else if getUnlinkedOrganizations().length > 0}
-                                        <div class="flex space-x-1">
-                                            {#each getUnlinkedOrganizations() as org}
+                                        </TableBodyCell>
+                                        <TableBodyCell>
+                                            {#if localWorkspaces.some((w) => w.clerkOrganizationId === org.id)}
+                                                <Badge color="green"
+                                                    >Synced</Badge
+                                                >
+                                            {:else}
+                                                <Badge color="gray"
+                                                    >Not Synced</Badge
+                                                >
+                                            {/if}
+                                        </TableBodyCell>
+                                        <TableBodyCell>
+                                            {#if !localWorkspaces.some((w) => w.clerkOrganizationId === org.id)}
                                                 <Button
                                                     size="xs"
                                                     color="purple"
                                                     on:click={() =>
-                                                        linkWorkspaceToOrg(
-                                                            workspace,
+                                                        createWorkspaceFromOrg(
                                                             org,
                                                         )}
                                                 >
-                                                    <CloudArrowUpOutline
+                                                    <ArrowDownOutline
                                                         class="w-3 h-3 mr-1"
                                                     />
-                                                    Link to {org.name}
+                                                    Import
                                                 </Button>
-                                            {/each}
-                                        </div>
-                                    {:else}
-                                        <span class="text-sm text-gray-500"
-                                            >No available organizations</span
-                                        >
-                                    {/if}
-                                </TableBodyCell>
-                            </TableBodyRow>
-                        {/each}
-                    </TableBody>
-                </Table>
-            {/if}
-        </Card>
-
-        <!-- Team Members Section -->
-        <Card padding="xl" class="mb-6" size="xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold flex items-center">
-                    <UsersSolid class="w-5 h-5 mr-2" />
-                    Team Members
-                </h3>
-                <Button
-                    size="sm"
-                    color="alternative"
-                    on:click={openClerkUserManager}
-                >
-                    Manage in Clerk
-                </Button>
-            </div>
-
-            <!-- Section for Clerk users -->
-            <Accordion class="mb-4">
-                <AccordionItem>
-                    <span slot="header" class="font-semibold">
-                        Clerk Users ({clerkUsers.length})
-                    </span>
-                    {#if clerkUsers.length === 0}
-                        <div class="bg-gray-50 p-4 rounded-lg text-center">
-                            <p>No Clerk users found</p>
-                        </div>
-                    {:else}
-                        <Table>
-                            <TableHead>
-                                <TableHeadCell>Name</TableHeadCell>
-                                <TableHeadCell>Email</TableHeadCell>
-                                <TableHeadCell>Role</TableHeadCell>
-                            </TableHead>
-                            <TableBody>
-                                {#each clerkUsers as user}
-                                    <TableBodyRow>
-                                        <TableBodyCell
-                                            >{user.fullName}</TableBodyCell
-                                        >
-                                        <TableBodyCell
-                                            >{user.email}</TableBodyCell
-                                        >
-                                        <TableBodyCell>
-                                            <Badge color="purple"
-                                                >{user.role}</Badge
-                                            >
+                                            {:else}
+                                                <Button
+                                                    size="xs"
+                                                    color="alternative"
+                                                    disabled
+                                                >
+                                                    <CheckCircleSolid
+                                                        class="w-3 h-3 mr-1"
+                                                    />
+                                                    Imported
+                                                </Button>
+                                            {/if}
                                         </TableBodyCell>
                                     </TableBodyRow>
                                 {/each}
                             </TableBody>
                         </Table>
                     {/if}
-                </AccordionItem>
-            </Accordion>
+                </Card>
 
-            <!-- Section for local team members -->
-            <h4 class="font-medium mb-2">Local Team Members</h4>
-            {#if localTeamMembers.length === 0}
-                <div class="bg-gray-50 p-4 rounded-lg text-center">
-                    <p>No team members found locally</p>
-                </div>
-            {:else}
-                <Table>
-                    <TableHead>
-                        <TableHeadCell>Name</TableHeadCell>
-                        <TableHeadCell>Workspace</TableHeadCell>
-                        <TableHeadCell>Role</TableHeadCell>
-                    </TableHead>
-                    <TableBody>
-                        {#each localTeamMembers as member}
-                            <TableBodyRow>
-                                <TableBodyCell>{member.name}</TableBodyCell>
-                                <TableBodyCell>
-                                    {getWorkspaceById(member.workspaceId)
-                                        ?.name || "Unknown"}
-                                </TableBodyCell>
-                                <TableBodyCell>
-                                    <Badge
-                                        color={member.role === "admin"
-                                            ? "red"
-                                            : "blue"}
-                                    >
-                                        {member.role}
-                                    </Badge>
-                                </TableBodyCell>
-                            </TableBodyRow>
-                        {/each}
-                    </TableBody>
-                </Table>
-            {/if}
-        </Card>
+                <!-- Local Workspaces -->
+                <Card padding="xl" class="mb-6" size="none">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center">
+                        <BuildingSolid class="w-5 h-5 mr-2" />
+                        Local Workspaces
+                    </h3>
 
-        <!-- Activity Log -->
-        <Card padding="xl" size="xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold">Sync Activity</h3>
-                <Button color="alternative" size="xs" on:click={clearLogs}
-                    >Clear</Button
-                >
+                    {#if localWorkspaces.length === 0}
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <p>No workspaces found in your local database</p>
+                        </div>
+                    {:else}
+                        <Table hoverable={true}>
+                            <TableHead>
+                                <TableHeadCell>Workspace</TableHeadCell>
+                                <TableHeadCell>Status</TableHeadCell>
+                                <TableHeadCell>Team Members</TableHeadCell>
+                                <TableHeadCell>Actions</TableHeadCell>
+                            </TableHead>
+                            <TableBody>
+                                {#each localWorkspaces as workspace}
+                                    <TableBodyRow>
+                                        <TableBodyCell>
+                                            <div>
+                                                <p class="font-medium">
+                                                    {workspace.name}
+                                                </p>
+                                            </div>
+                                        </TableBodyCell>
+                                        <TableBodyCell>
+                                            {#if isWorkspaceSynced(workspace)}
+                                                <Badge color="green">
+                                                    Synced with "{getLinkedOrganization(
+                                                        workspace,
+                                                    )?.name || "Unknown"}"
+                                                </Badge>
+                                            {:else}
+                                                <Badge color="gray"
+                                                    >Not Synced</Badge
+                                                >
+                                            {/if}
+                                        </TableBodyCell>
+                                        <TableBodyCell>
+                                            {getTeamMembersForWorkspace(
+                                                workspace.id,
+                                            ).length} members
+                                        </TableBodyCell>
+                                        <TableBodyCell>
+                                            {#if isWorkspaceSynced(workspace)}
+                                                <div class="flex space-x-1">
+                                                    <Button
+                                                        size="xs"
+                                                        color="purple"
+                                                        on:click={() =>
+                                                            createTeamMembersFromUsers(
+                                                                workspace.id,
+                                                            )}
+                                                    >
+                                                        <UsersSolid
+                                                            class="w-3 h-3 mr-1"
+                                                        />
+                                                        Import Members
+                                                    </Button>
+                                                    <Button
+                                                        size="xs"
+                                                        color="red"
+                                                        on:click={() =>
+                                                            unlinkWorkspace(
+                                                                workspace,
+                                                            )}
+                                                    >
+                                                        <TrashBinSolid
+                                                            class="w-3 h-3 mr-1"
+                                                        />
+                                                        Unlink
+                                                    </Button>
+                                                </div>
+                                            {:else if getUnlinkedOrganizations().length > 0}
+                                                <div class="flex space-x-1">
+                                                    {#each getUnlinkedOrganizations() as org}
+                                                        <Button
+                                                            size="xs"
+                                                            color="purple"
+                                                            on:click={() =>
+                                                                linkWorkspaceToOrg(
+                                                                    workspace,
+                                                                    org,
+                                                                )}
+                                                        >
+                                                            <CloudArrowUpOutline
+                                                                class="w-3 h-3 mr-1"
+                                                            />
+                                                            Link to {org.name}
+                                                        </Button>
+                                                    {/each}
+                                                </div>
+                                            {:else}
+                                                <span
+                                                    class="text-sm text-gray-500"
+                                                    >No available organizations</span
+                                                >
+                                            {/if}
+                                        </TableBodyCell>
+                                    </TableBodyRow>
+                                {/each}
+                            </TableBody>
+                        </Table>
+                    {/if}
+                </Card>
+
+                <!-- Team Members Section -->
+                <Card padding="xl" class="mb-6" size="none">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold flex items-center">
+                            <UsersSolid class="w-5 h-5 mr-2" />
+                            Team Members
+                        </h3>
+                        <Button
+                            size="sm"
+                            color="alternative"
+                            on:click={openClerkUserManager}
+                        >
+                            Manage Organization Members
+                        </Button>
+                    </div>
+
+                    <!-- Section for Clerk users -->
+                    <Accordion class="mb-4">
+                        <AccordionItem>
+                            <span slot="header" class="font-semibold">
+                                Clerk Users ({clerkUsers.length})
+                            </span>
+                            {#if clerkUsers.length === 0}
+                                <div
+                                    class="bg-gray-50 p-4 rounded-lg text-center"
+                                >
+                                    <p>No Clerk users found</p>
+                                </div>
+                            {:else}
+                                <Table>
+                                    <TableHead>
+                                        <TableHeadCell>Name</TableHeadCell>
+                                        <TableHeadCell>Email</TableHeadCell>
+                                        <TableHeadCell>Role</TableHeadCell>
+                                    </TableHead>
+                                    <TableBody>
+                                        {#each clerkUsers as user}
+                                            <TableBodyRow>
+                                                <TableBodyCell
+                                                    >{user.fullName}</TableBodyCell
+                                                >
+                                                <TableBodyCell
+                                                    >{user.email}</TableBodyCell
+                                                >
+                                                <TableBodyCell>
+                                                    <Badge color="purple"
+                                                        >{user.role}</Badge
+                                                    >
+                                                </TableBodyCell>
+                                            </TableBodyRow>
+                                        {/each}
+                                    </TableBody>
+                                </Table>
+                            {/if}
+                        </AccordionItem>
+                    </Accordion>
+
+                    <!-- Section for local team members -->
+                    <h4 class="font-medium mb-2">Local Team Members</h4>
+                    {#if localTeamMembers.length === 0}
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <p>No team members found locally</p>
+                        </div>
+                    {:else}
+                        <Table>
+                            <TableHead>
+                                <TableHeadCell>Name</TableHeadCell>
+                                <TableHeadCell>Workspace</TableHeadCell>
+                                <TableHeadCell>Role</TableHeadCell>
+                            </TableHead>
+                            <TableBody>
+                                {#each localTeamMembers as member}
+                                    <TableBodyRow>
+                                        <TableBodyCell
+                                            >{member.name}</TableBodyCell
+                                        >
+                                        <TableBodyCell>
+                                            {getWorkspaceById(
+                                                member.workspaceId,
+                                            )?.name || "Unknown"}
+                                        </TableBodyCell>
+                                        <TableBodyCell>
+                                            <Badge
+                                                color={member.role === "admin"
+                                                    ? "red"
+                                                    : "blue"}
+                                            >
+                                                {member.role}
+                                            </Badge>
+                                        </TableBodyCell>
+                                    </TableBodyRow>
+                                {/each}
+                            </TableBody>
+                        </Table>
+                    {/if}
+                </Card>
+
+                <!-- Activity Log -->
+                <Card padding="xl" size="none">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Sync Activity</h3>
+                        <Button
+                            color="alternative"
+                            size="xs"
+                            on:click={clearLogs}>Clear</Button
+                        >
+                    </div>
+
+                    {#if syncLogs.length === 0}
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <p class="text-gray-500">
+                                No activity recorded yet
+                            </p>
+                        </div>
+                    {:else}
+                        <div class="max-h-[200px] overflow-y-auto">
+                            <Table>
+                                <TableHead>
+                                    <TableHeadCell>Time</TableHeadCell>
+                                    <TableHeadCell>Message</TableHeadCell>
+                                    <TableHeadCell>Type</TableHeadCell>
+                                </TableHead>
+                                <TableBody>
+                                    {#each syncLogs as log}
+                                        <TableBodyRow>
+                                            <TableBodyCell>
+                                                {log.timestamp.toLocaleTimeString()}
+                                            </TableBodyCell>
+                                            <TableBodyCell
+                                                >{log.message}</TableBodyCell
+                                            >
+                                            <TableBodyCell>
+                                                {#if log.type === "success"}
+                                                    <Badge color="green"
+                                                        >Success</Badge
+                                                    >
+                                                {:else if log.type === "error"}
+                                                    <Badge color="red"
+                                                        >Error</Badge
+                                                    >
+                                                {:else if log.type === "warning"}
+                                                    <Badge color="yellow"
+                                                        >Warning</Badge
+                                                    >
+                                                {:else}
+                                                    <Badge color="blue"
+                                                        >Info</Badge
+                                                    >
+                                                {/if}
+                                            </TableBodyCell>
+                                        </TableBodyRow>
+                                    {/each}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    {/if}
+                </Card>
             </div>
 
-            {#if syncLogs.length === 0}
-                <div class="bg-gray-50 p-4 rounded-lg text-center">
-                    <p class="text-gray-500">No activity recorded yet</p>
-                </div>
-            {:else}
-                <div class="max-h-[200px] overflow-y-auto">
-                    <Table>
-                        <TableHead>
-                            <TableHeadCell>Time</TableHeadCell>
-                            <TableHeadCell>Message</TableHeadCell>
-                            <TableHeadCell>Type</TableHeadCell>
-                        </TableHead>
-                        <TableBody>
-                            {#each syncLogs as log}
-                                <TableBodyRow>
-                                    <TableBodyCell>
-                                        {log.timestamp.toLocaleTimeString()}
-                                    </TableBodyCell>
-                                    <TableBodyCell>{log.message}</TableBodyCell>
-                                    <TableBodyCell>
-                                        {#if log.type === "success"}
-                                            <Badge color="green">Success</Badge>
-                                        {:else if log.type === "error"}
-                                            <Badge color="red">Error</Badge>
-                                        {:else if log.type === "warning"}
-                                            <Badge color="yellow">Warning</Badge
-                                            >
-                                        {:else}
-                                            <Badge color="blue">Info</Badge>
-                                        {/if}
-                                    </TableBodyCell>
-                                </TableBodyRow>
-                            {/each}
-                        </TableBody>
-                    </Table>
-                </div>
-            {/if}
-        </Card>
+            <!-- Help & Information sidebar (right) -->
+            <div class="w-full lg:w-1/3">
+                <div class="sticky top-4">
+                    <Card padding="xl" size="none">
+                        <h3 class="text-lg font-semibold mb-4">
+                            Help & Information
+                        </h3>
 
-        <!-- Help Section (Collapsed by default) -->
-        <Accordion class="mt-6">
-            <AccordionItem>
-                <span slot="header" class="font-semibold"
-                    >Help & Information</span
-                >
-                <div class="space-y-4 p-4">
-                    <h4 class="font-medium">How Cloud Sync Works</h4>
-                    <p>
-                        Cloud Sync connects your local workspaces with your
-                        Clerk organizations, allowing you to:
-                    </p>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>
-                            Import organizations from Clerk to create local
-                            workspaces
-                        </li>
-                        <li>
-                            Link existing local workspaces to Clerk
-                            organizations
-                        </li>
-                        <li>Import organization members as team members</li>
-                        <li>
-                            Unlink workspaces when you no longer want them
-                            connected
-                        </li>
-                    </ul>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-medium text-gray-900">
+                                    How Cloud Sync Works
+                                </h4>
+                                <p class="mt-2 text-gray-700">
+                                    Cloud Sync connects your local workspaces
+                                    with your Clerk organizations, allowing you
+                                    to:
+                                </p>
+                                <ul
+                                    class="list-disc pl-5 space-y-1 mt-2 text-gray-700"
+                                >
+                                    <li>
+                                        Import organizations from Clerk to
+                                        create local workspaces
+                                    </li>
+                                    <li>
+                                        Link existing local workspaces to Clerk
+                                        organizations
+                                    </li>
+                                    <li>
+                                        Import organization members as team
+                                        members
+                                    </li>
+                                    <li>
+                                        Unlink workspaces when you no longer
+                                        want them connected
+                                    </li>
+                                </ul>
+                            </div>
 
-                    <h4 class="font-medium mt-4">Clerk Integration Features</h4>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>
-                            <strong>Organizations:</strong> Each Clerk organization
-                            can be imported as a workspace
-                        </li>
-                        <li>
-                            <strong>Members:</strong> Organization members can be
-                            imported as team members
-                        </li>
-                        <li>
-                            <strong>Roles:</strong> Administrative roles in Clerk
-                            map to roles in TickTickClock
-                        </li>
-                        <li>
-                            <strong>Management:</strong> Use the "Manage" buttons
-                            to open Clerk's UI for managing organizations and members
-                        </li>
-                    </ul>
+                            <div class="border-t pt-4">
+                                <h4 class="font-medium text-gray-900">
+                                    Clerk Integration Features
+                                </h4>
+                                <ul
+                                    class="list-disc pl-5 space-y-1 mt-2 text-gray-700"
+                                >
+                                    <li>
+                                        <strong>Organizations:</strong> Each Clerk
+                                        organization can be imported as a workspace
+                                    </li>
+                                    <li>
+                                        <strong>Members:</strong> Organization members
+                                        can be imported as team members
+                                    </li>
+                                    <li>
+                                        <strong>Roles:</strong> Administrative roles
+                                        in Clerk map to roles in TickTickClock
+                                    </li>
+                                    <li>
+                                        <strong>Management:</strong> Use the management
+                                        buttons to access Clerk's organization tools
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="border-t pt-4">
+                                <h4 class="font-medium text-gray-900">
+                                    Sync Process
+                                </h4>
+                                <ol
+                                    class="list-decimal pl-5 space-y-1 mt-2 text-gray-700"
+                                >
+                                    <li>
+                                        Create or select a Clerk organization
+                                    </li>
+                                    <li>
+                                        Import the organization as a workspace
+                                    </li>
+                                    <li>
+                                        Import organization members as team
+                                        members
+                                    </li>
+                                    <li>
+                                        Use the "Sync All" button for automated
+                                        syncing
+                                    </li>
+                                </ol>
+                            </div>
+
+                            <div class="border-t pt-4">
+                                <h4 class="font-medium text-gray-900">
+                                    Troubleshooting
+                                </h4>
+                                <ul
+                                    class="list-disc pl-5 space-y-1 mt-2 text-gray-700"
+                                >
+                                    <li>
+                                        <strong
+                                            >Not seeing organizations?</strong
+                                        > Make sure you've created them in the Clerk
+                                        dashboard first
+                                    </li>
+                                    <li>
+                                        <strong>Sync issues?</strong> Check the Activity
+                                        Log for specific error messages
+                                    </li>
+                                    <li>
+                                        <strong>Need more help?</strong> Contact
+                                        support at wrand.cc
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
-            </AccordionItem>
-        </Accordion>
+            </div>
+        </div>
     {/if}
 </div>

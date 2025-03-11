@@ -128,7 +128,7 @@
         {ssoLoading === "google" ? "Connecting..." : "Continue with Google"}
     </Button>
 
-    <Button
+    <!-- <Button
         type="button"
         color="alternative"
         class="flex items-center justify-center"
@@ -150,7 +150,7 @@
         {ssoLoading === "linkedin_oidc"
             ? "Connecting..."
             : "Continue with LinkedIn"}
-    </Button>
+    </Button> -->
 </div>
 
 <div class="mb-4 relative flex items-center">

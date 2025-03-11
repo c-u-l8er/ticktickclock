@@ -135,7 +135,7 @@
             {ssoLoading === "google" ? "Connecting..." : "Continue with Google"}
         </Button>
 
-        <Button
+        <!-- <Button
             type="button"
             color="alternative"
             class="flex items-center justify-center"
@@ -159,7 +159,7 @@
             {ssoLoading === "linkedin_oidc"
                 ? "Connecting..."
                 : "Continue with LinkedIn"}
-        </Button>
+        </Button> -->
     </div>
 
     <div class="relative flex items-center">
@@ -193,7 +193,7 @@
     </div>
     <div class="text-right">
         <a
-            href="https://learning-starfish-18.accounts.dev"
+            href="https://accounts.ticktickclock.com"
             target="_blank"
             class="text-sm text-blue-600 hover:underline"
         >

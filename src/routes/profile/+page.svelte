@@ -3,6 +3,11 @@
     import { clerkReady } from "$lib/stores/workspaceStore";
     import { goto } from "$app/navigation";
     import { Button, Heading, Card, Avatar } from "flowbite-svelte";
+    import {
+        GoogleSolid,
+        FacebookSolid,
+        LinkedinSolid,
+    } from "flowbite-svelte-icons";
 
     let user: any = null;
     let isLoading = true;
@@ -40,6 +45,38 @@
                 goto("/");
             });
         }
+    }
+
+    // Open Clerk's user profile management UI
+    function openClerkUserProfile(initialTab = "account") {
+        if (window.Clerk) {
+            window.Clerk.openUserProfile({
+                appearance: {
+                    elements: {
+                        userProfilePage: {
+                            activeTab: initialTab,
+                        },
+                    },
+                },
+            });
+        }
+    }
+
+    // Helper function to get a nice provider display name
+    function getProviderDisplayName(provider) {
+        const map = {
+            google: "Google",
+            facebook: "Facebook",
+            linkedin_oidc: "LinkedIn",
+            github: "GitHub",
+            apple: "Apple",
+        };
+
+        return (
+            map[provider] ||
+            provider.charAt(0).toUpperCase() +
+                provider.slice(1).replace("_oidc", "")
+        );
     }
 </script>
 
@@ -111,10 +148,35 @@
                         <ul class="space-y-2">
                             {#each user.externalAccounts as account}
                                 <li
-                                    class="flex items-center p-2 bg-gray-50 dark:bg-gray-800 rounded"
+                                    class="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded"
                                 >
+                                    <!-- Display provider icon -->
+                                    {#if account.provider === "google"}
+                                        <GoogleSolid
+                                            class="w-5 h-5 mr-3 text-red-600"
+                                        />
+                                    {:else if account.provider === "facebook"}
+                                        <FacebookSolid
+                                            class="w-5 h-5 mr-3 text-blue-600"
+                                        />
+                                    {:else if account.provider === "linkedin_oidc"}
+                                        <LinkedinSolid
+                                            class="w-5 h-5 mr-3 text-blue-700"
+                                        />
+                                    {:else}
+                                        <span
+                                            class="w-5 h-5 mr-3 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full text-xs font-bold"
+                                        >
+                                            {account.provider
+                                                .charAt(0)
+                                                .toUpperCase()}
+                                        </span>
+                                    {/if}
+
                                     <span class="font-medium"
-                                        >{account.provider}</span
+                                        >{getProviderDisplayName(
+                                            account.provider,
+                                        )}</span
                                     >
                                     <span class="ml-auto text-sm text-gray-500"
                                         >{account.emailAddress}</span
@@ -122,8 +184,30 @@
                                 </li>
                             {/each}
                         </ul>
+
+                        <!-- Manage connections button -->
+                        <div class="mt-4">
+                            <Button
+                                color="alternative"
+                                class="w-full"
+                                on:click={() =>
+                                    openClerkUserProfile("account-connections")}
+                            >
+                                Manage Connections
+                            </Button>
+                        </div>
                     {:else}
-                        <p class="text-gray-500">No connected accounts</p>
+                        <p class="text-gray-500 mb-4">No connected accounts</p>
+
+                        <!-- Add connection button -->
+                        <Button
+                            color="alternative"
+                            class="w-full"
+                            on:click={() =>
+                                openClerkUserProfile("account-connections")}
+                        >
+                            Add Social Connection
+                        </Button>
                     {/if}
                 </div>
 
@@ -142,15 +226,14 @@
 
                 <div class="flex flex-wrap gap-4 mt-8">
                     <Button
-                        href="https://learning-starfish-18.accounts.dev/user"
-                        target="_blank"
+                        color="alternative"
+                        on:click={() => openClerkUserProfile("account")}
                     >
                         Manage Account Settings
                     </Button>
                     <Button
                         color="alternative"
-                        href="https://learning-starfish-18.accounts.dev/user/security"
-                        target="_blank"
+                        on:click={() => openClerkUserProfile("security")}
                     >
                         Security Settings
                     </Button>

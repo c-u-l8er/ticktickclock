@@ -65,5 +65,22 @@
                 <slot />
             </main>
         </div>
+        <div style="background: #000; padding: 2em 0 1em;">
+            <div style="margin: 0 auto; width: 728px;">
+                <iframe
+                    src="https://watermark.wrand.cc/advertisements/leaderboard-watermark.html"
+                    width="728"
+                    height="90"
+                    frameborder="0"
+                    scrolling="no"
+                    style="border:none; overflow:hidden;"
+                    title="WaterMark Branding Design Agency Advertisement"
+                >
+                </iframe>
+                <div style="text-align: right; color: #ccc; font-size: 0.75em;">
+                    ^ADVERTISEMENT
+                </div>
+            </div>
+        </div>
     </div>
 {/if}

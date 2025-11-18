@@ -149,6 +149,29 @@
             margin-bottom: 3rem;
         }
 
+        .powered-by {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            animation: fadeInUp 1s ease-out 0.2s forwards;
+        }
+
+        .powered-by a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .powered-by a:hover {
+            color: #ffffff;
+        }
+
         .cta-buttons {
             display: flex;
             gap: 1.5rem;
@@ -499,6 +522,9 @@
     </header>
 
     <section class="hero">
+        <div class="powered-by">
+            Powered by <a href="https://traaviis.com" target="_blank">TRAAVIIS</a>
+        </div>
         <h1>TickTickClock</h1>
         <p class="subtitle">Bulk Synchronous Parallel for Elixir</p>
         <p class="tagline">

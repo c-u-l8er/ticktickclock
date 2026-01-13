@@ -338,9 +338,18 @@
         <a href="https://app.fleetprompt.com/marketplace?q=TickTickClock" class="cta">
             <span>Discover on FleetPrompt</span>
         </a>
+
+    </div>
+    
+    <div style="z-index: 999; position: fixed; bottom: 1em; width: 100%; text-align: center;">
+        &copy; <span id="currentYear"></span> TickTickClock.com ... Powered by <a href="https://ampersandboxdesign.com">[&]</a>
     </div>
 
     <script>
+        // Set current year dynamically
+        document.getElementById("currentYear").textContent =
+            new Date().getFullYear();
+
         // Canvas setup
         const canvas = document.getElementById('viz-canvas');
         const ctx = canvas.getContext('2d');

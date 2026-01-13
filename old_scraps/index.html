@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TickTickClock - Bulk Synchronous Parallel for Elixir</title>
+    <meta name="description" content="Declarative, type-safe bulk synchronous parallel computing for Elixir. Build distributed algorithms with predictable performance and zero deadlocks.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0e27;
+            --bg-medium: #1a1f3a;
+            --accent-blue: #4a90e2;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --text-light: #e2e8f0;
+            --text-dim: #94a3b8;
+            --glow-blue: rgba(74, 144, 226, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(ellipse at top, rgba(74, 144, 226, 0.15) 0%, transparent 50%),
+                        radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Header */
+        header {
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(26, 31, 58, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(74, 144, 226, 0.2);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .clock-icon {
+            font-size: 2rem;
+            animation: tick 2s steps(12) infinite;
+        }
+
+        @keyframes tick {
+            to { transform: rotate(360deg); }
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--text-light);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            color: var(--accent-cyan);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 5%;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .subtitle {
+            font-size: 1.5rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        .hero .tagline {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            max-width: 800px;
+            margin-bottom: 3rem;
+        }
+
+        .powered-by {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            animation: fadeInUp 1s ease-out 0.2s forwards;
+        }
+
+        .powered-by a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .powered-by a:hover {
+            color: #ffffff;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            box-shadow: 0 4px 20px var(--glow-blue);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px var(--glow-blue);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent-cyan);
+            border: 2px solid var(--accent-cyan);
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+        }
+
+        /* Code Example */
+        .code-example {
+            background: var(--bg-medium);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 3rem;
+            max-width: 900px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-example::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-cyan));
+        }
+
+        .code-example pre {
+            overflow-x: auto;
+            color: var(--text-light);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .keyword { color: #c678dd; }
+        .function { color: #61afef; }
+        .string { color: #98c379; }
+        .comment { color: #5c6370; font-style: italic; }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 5%;
+            background: var(--bg-medium);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-header p {
+            font-size: 1.25rem;
+            color: var(--text-dim);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--bg-dark);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(74, 144, 226, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent-cyan);
+        }
+
+        .feature-card p {
+            color: var(--text-dim);
+        }
+
+        /* Applications Section */
+        .applications {
+            padding: 6rem 5%;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .app-card {
+            background: var(--bg-medium);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .app-card:hover {
+            border-color: var(--accent-purple);
+            transform: scale(1.05);
+        }
+
+        .app-card .emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .app-card h4 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-purple);
+        }
+
+        /* Architecture Section */
+        .architecture {
+            padding: 6rem 5%;
+            background: var(--bg-medium);
+        }
+
+        .arch-diagram {
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 3rem;
+            background: var(--bg-dark);
+            border-radius: 16px;
+            border: 2px solid rgba(74, 144, 226, 0.3);
+        }
+
+        .superstep {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(74, 144, 226, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .superstep-label {
+            font-weight: 600;
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
+        }
+
+        .arrow {
+            font-size: 2rem;
+            color: var(--accent-purple);
+        }
+
+        /* Ecosystem Section */
+        .ecosystem {
+            padding: 6rem 5%;
+        }
+
+        .ecosystem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 3rem auto 0;
+        }
+
+        .ecosystem-card {
+            background: var(--bg-medium);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+        }
+
+        .ecosystem-card h3 {
+            color: var(--accent-blue);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .ecosystem-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .ecosystem-card li {
+            padding: 0.5rem 0;
+            color: var(--text-dim);
+            border-bottom: 1px solid rgba(74, 144, 226, 0.1);
+        }
+
+        .ecosystem-card li:last-child {
+            border-bottom: none;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 6rem 5%;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(139, 92, 246, 0.1));
+        }
+
+        .cta-section h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-section p {
+            font-size: 1.25rem;
+            color: var(--text-dim);
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 5%;
+            background: var(--bg-medium);
+            text-align: center;
+            border-top: 1px solid rgba(74, 144, 226, 0.2);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-cyan);
+        }
+
+        .copyright {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero .subtitle {
+                font-size: 1.25rem;
+            }
+
+            .hero .tagline {
+                font-size: 1rem;
+            }
+
+            nav {
+                display: none;
+            }
+
+            .section-header h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="stars" id="stars"></div>
+
+    <header>
+        <div class="logo">
+            <span class="clock-icon">🕰️</span>
+            <span>TickTickClock</span>
+        </div>
+        <nav>
+            <a href="#features">Features</a>
+            <a href="#applications">Applications</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#ecosystem">Ecosystem</a>
+            <a href="documentation.html">Docs</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="powered-by">
+            Powered by <a href="https://traaviis.com" target="_blank">TRAAVIIS</a>
+        </div>
+        <h1>TickTickClock</h1>
+        <p class="subtitle">BSP? BSP? Bulk Synchronous Parallel!!</p>
+        <p class="tagline">
+            Declarative, type-safe distributed computing with predictable performance. 
+            Build parallel algorithms that scale from laptops to supercomputers—deadlock-free, always.
+        </p>
+        <div class="cta-buttons">
+            <a href="documentation.html#summary.md" class="btn btn-primary">Get Started</a>
+            <a href="https://github.com/yourusername/ticktickclock" class="btn btn-secondary">View on GitHub</a>
+        </div>
+
+        <div class="code-example">
+            <pre><code><span class="keyword">defmodule</span> <span class="function">MyApp.PageRank</span> <span class="keyword">do</span>
+  <span class="keyword">use</span> TickTickClock.BSP
+
+  <span class="comment"># Declarative superstep definition</span>
+  <span class="function">superstep</span> <span class="string">:calculate_rank</span> <span class="keyword">do</span>
+    <span class="comment"># Compute phase - runs in parallel</span>
+    <span class="function">compute</span> <span class="keyword">fn</span> vertex <span class="keyword">-></span>
+      new_rank = <span class="string">0.15</span> + <span class="string">0.85</span> * sum(vertex.inbox)
+      {<span class="string">:ok</span>, %{vertex | rank: new_rank}}
+    <span class="keyword">end</span>
+
+    <span class="comment"># Communication phase - automatic synchronization</span>
+    <span class="function">communicate</span> <span class="keyword">do</span>
+      <span class="function">send_to</span> <span class="string">:neighbors</span>, <span class="keyword">fn</span> vertex <span class="keyword">-></span>
+        contribution = vertex.rank / length(vertex.edges)
+        Enum.map(vertex.edges, &{&<span class="string">1</span>, contribution})
+      <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="comment"># Convergence check</span>
+    <span class="function">converged?</span> <span class="keyword">fn</span> old, new <span class="keyword">-></span>
+      abs(new.rank - old.rank) < <span class="string">0.0001</span>
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="section-header">
+            <h2>Why TickTickClock?</h2>
+            <p>The power of BSP, the elegance of Elixir, the reliability of BEAM</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Declarative First</h3>
+                <p>Define what to compute, not how to synchronize. Focus on your algorithm, not barriers and locks.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Type-Safe</h3>
+                <p>Stellarmorphism integration ensures compile-time guarantees. Catch errors before runtime.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Predictable Performance</h3>
+                <p>BSP cost model (w + h·g + l) lets you predict execution time before running.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚫</div>
+                <h3>Deadlock-Free</h3>
+                <p>Bulk synchronous barriers eliminate race conditions and deadlocks by design.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>BEAM-Native</h3>
+                <p>Leverage OTP supervision, distribution, and fault tolerance. Run on any BEAM cluster.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📡</div>
+                <h3>Real-Time Observable</h3>
+                <p>Phoenix LiveView dashboards show superstep progress, processor status, and metrics.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>Composable</h3>
+                <p>Mix BSP computations with OPEN workflows, Ash resources, and regular Elixir code.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📏</div>
+                <h3>Scales Up & Down</h3>
+                <p>From single-core development to thousand-node clusters. Same code, different scale.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧪</div>
+                <h3>Testable</h3>
+                <p>Deterministic execution makes parallel algorithms easy to test and debug.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="applications" class="applications">
+        <div class="section-header">
+            <h2>Built For Real Problems</h2>
+            <p>From social networks to supercomputers</p>
+        </div>
+        <div class="app-grid">
+            <div class="app-card">
+                <div class="emoji">🌐</div>
+                <h4>Graph Analytics</h4>
+                <p>PageRank, shortest paths, community detection</p>
+            </div>
+            <div class="app-card">
+                <div class="emoji">🧬</div>
+                <h4>Scientific Computing</h4>
+                <p>Molecular dynamics, N-body simulations</p>
+            </div>
+            <div class="app-card">
+                <div class="emoji">🤖</div>
+                <h4>Machine Learning</h4>
+                <p>Distributed gradient descent, model training</p>
+            </div>
+            <div class="app-card">
+                <div class="emoji">📊</div>
+                <h4>Data Analytics</h4>
+                <p>MapReduce, sorting, aggregation at scale</p>
+            </div>
+            <div class="app-card">
+                <div class="emoji">🚗</div>
+                <h4>Fleet Optimization</h4>
+                <p>Route planning, traffic flow, coordination</p>
+            </div>
+            <div class="app-card">
+                <div class="emoji">💰</div>
+                <h4>Financial Systems</h4>
+                <p>Risk calculation, portfolio optimization</p>
+            </div>
+            <div class="app-card">
+                <div class="emoji">🖼️</div>
+                <h4>Image Processing</h4>
+                <p>Segmentation, filtering, computer vision</p>
+            </div>
+            <div class="app-card">
+                <div class="emoji">🎮</div>
+                <h4>Real-Time Systems</h4>
+                <p>Game synchronization, multiplayer state</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="architecture" class="architecture">
+        <div class="section-header">
+            <h2>How It Works</h2>
+            <p>The BSP model: Compute → Communicate → Synchronize</p>
+        </div>
+        <div class="arch-diagram">
+            <div class="superstep">
+                <span class="superstep-label">1. Local Computation</span>
+                <span>Processors work in parallel on local data</span>
+                <span class="arrow">↓</span>
+            </div>
+            <div class="superstep">
+                <span class="superstep-label">2. Communication</span>
+                <span>Exchange messages between processors</span>
+                <span class="arrow">↓</span>
+            </div>
+            <div class="superstep">
+                <span class="superstep-label">3. Barrier Synchronization</span>
+                <span>All processors wait until everyone completes</span>
+                <span class="arrow">↓</span>
+            </div>
+            <div class="superstep">
+                <span class="superstep-label">Next Superstep</span>
+                <span>Repeat until convergence or termination</span>
+                <span class="arrow">🔁</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="ecosystem" class="ecosystem">
+        <div class="section-header">
+            <h2>Part of a Stellar Ecosystem</h2>
+            <p>TickTickClock integrates seamlessly with your Elixir stack</p>
+        </div>
+        <div class="ecosystem-grid">
+            <div class="ecosystem-card">
+                <h3>🌟 Stellarmorphism</h3>
+                <ul>
+                    <li>Type-safe data structures</li>
+                    <li>Compile-time validation</li>
+                    <li>Pattern matching with fission</li>
+                    <li>Asteroid & rocket recursion</li>
+                </ul>
+            </div>
+            <div class="ecosystem-card">
+                <h3>🔄 OPEN Sentience</h3>
+                <ul>
+                    <li>DAG workflow orchestration</li>
+                    <li>Mix BSP with traditional tasks</li>
+                    <li>Distributed execution</li>
+                    <li>OTP supervision trees</li>
+                </ul>
+            </div>
+            <div class="ecosystem-card">
+                <h3>🗺️ WebHost.systems</h3>
+                <ul>
+                    <li>GPS tracking infrastructure</li>
+                    <li>TimescaleDB integration</li>
+                    <li>PostGIS spatial queries</li>
+                    <li>Real-time fleet coordination</li>
+                </ul>
+            </div>
+            <div class="ecosystem-card">
+                <h3>🔥 Ash Framework</h3>
+                <ul>
+                    <li>Declarative resource patterns</li>
+                    <li>Action-based API</li>
+                    <li>Multi-tenant isolation</li>
+                    <li>Authorization policies</li>
+                </ul>
+            </div>
+            <div class="ecosystem-card">
+                <h3>🎭 Phoenix LiveView</h3>
+                <ul>
+                    <li>Real-time dashboards</li>
+                    <li>Superstep visualization</li>
+                    <li>Performance metrics</li>
+                    <li>Zero JavaScript needed</li>
+                </ul>
+            </div>
+            <div class="ecosystem-card">
+                <h3>⚙️ BEAM Ecosystem</h3>
+                <ul>
+                    <li>OTP fault tolerance</li>
+                    <li>Distributed Erlang</li>
+                    <li>GenServer processors</li>
+                    <li>Telemetry integration</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <h2>Ready to Build?</h2>
+        <p>Join the future of parallel computing in Elixir. TickTickClock brings supercomputer algorithms to BEAM.</p>
+        <div class="cta-buttons">
+            <a href="documentation.html#summary.md" class="btn btn-primary">Get Started</a>
+            <a href="documentation.html" class="btn btn-secondary">Read the Docs</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/yourusername/ticktickclock">GitHub</a>
+            <a href="documentation.html">Documentation</a>
+            <a href="#examples">Examples</a>
+            <a href="#community">Community</a>
+            <a href="https://opensentience.org">OPEN</a>
+            <a href="https://webhost.systems">WebHost.systems</a>
+        </div>
+        <p class="copyright">
+            © 2025 TickTickClock. Part of the stellar computing ecosystem. MIT License.
+        </p>
+    </footer>
+
+    <div style="background: #000; padding: 2em 0 1em;">
+        <div style="margin: 0 auto; width: 728px;">
+            <iframe
+                src="https://ampersandboxdesign.com/advertisements/leaderboard-watermark.html"
+                width="728"
+                height="90"
+                frameborder="0"
+                scrolling="no"
+                style="border:none; overflow:hidden;"
+                title="AmperSandboxDesign Branding Design Agency Advertisement"
+            >
+            </iframe>
+            <div style="text-align: right; color: #ccc; font-size: 0.75em;">
+                ^ADVERTISEMENT
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Generate stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+    </script>
+</body>
+</html>
